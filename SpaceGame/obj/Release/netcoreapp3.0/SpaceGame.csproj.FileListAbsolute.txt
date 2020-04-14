@@ -1,0 +1,16 @@
+H:\Programming\SpaceGame\SpaceGame\obj\Release\netcoreapp3.0\SpaceGame.csprojAssemblyReference.cache
+H:\Programming\SpaceGame\SpaceGame\obj\Release\netcoreapp3.0\SpaceGame.AssemblyInfoInputs.cache
+H:\Programming\SpaceGame\SpaceGame\obj\Release\netcoreapp3.0\SpaceGame.AssemblyInfo.cs
+H:\Programming\SpaceGame\SpaceGame\bin\Release\netcoreapp3.0\SpaceGame.exe
+H:\Programming\SpaceGame\SpaceGame\bin\Release\netcoreapp3.0\SpaceGame.deps.json
+H:\Programming\SpaceGame\SpaceGame\bin\Release\netcoreapp3.0\SpaceGame.runtimeconfig.json
+H:\Programming\SpaceGame\SpaceGame\bin\Release\netcoreapp3.0\SpaceGame.runtimeconfig.dev.json
+H:\Programming\SpaceGame\SpaceGame\bin\Release\netcoreapp3.0\SpaceGame.dll
+H:\Programming\SpaceGame\SpaceGame\bin\Release\netcoreapp3.0\SpaceGame.pdb
+H:\Programming\SpaceGame\SpaceGame\bin\Release\netcoreapp3.0\RayLib.NET.dll
+H:\Programming\SpaceGame\SpaceGame\bin\Release\netcoreapp3.0\SharpNoise.dll
+H:\Programming\SpaceGame\SpaceGame\bin\Release\netcoreapp3.0\SixLabors.Core.dll
+H:\Programming\SpaceGame\SpaceGame\bin\Release\netcoreapp3.0\SixLabors.ImageSharp.dll
+H:\Programming\SpaceGame\SpaceGame\obj\Release\netcoreapp3.0\SpaceGame.csproj.CopyComplete
+H:\Programming\SpaceGame\SpaceGame\obj\Release\netcoreapp3.0\SpaceGame.dll
+H:\Programming\SpaceGame\SpaceGame\obj\Release\netcoreapp3.0\SpaceGame.pdb

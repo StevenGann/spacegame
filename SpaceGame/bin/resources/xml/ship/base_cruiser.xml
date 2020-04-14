@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<spaceship>
+  <drag>0.01</drag>
+  <angulardrag>0.1</angulardrag>
+  <rateoffire>1</rateoffire>
+  <scale>0.25</scale>
+  <mass>1</mass>
+  <hull>100</hull>
+  <shield>100</shield>
+  <maxhull>100</maxhull>
+  <maxshield>100</maxshield>
+  <shieldregen>0.25</shieldregen>
+  <maxthrust>0.1</maxthrust>
+  <turnspeed>0.25</turnspeed>
+  <rateoffire>1</rateoffire>
+  <shieldrebootprobability>5</shieldrebootprobability>
+  <hardpoints></hardpoints>
+</spaceship>

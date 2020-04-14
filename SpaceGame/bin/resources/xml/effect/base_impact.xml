@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<spaceship>
+  <texture>effect\particle impact+0</texture>
+  <lifespan>30</lifespan>
+  <maxparticles>3</maxparticles>
+  <minparticles>1</minparticles>
+  <ParticleSpawnRadius>0</ParticleSpawnRadius>
+  <maxparticlespeed>0.1</maxparticlespeed>
+  <minparticlespeed>0.0</minparticlespeed>
+  <MinParticleLife>20</MinParticleLife>
+  <MaxParticleLife>30</MaxParticleLife>
+  <MaxParticleScale>0.75</MaxParticleScale>
+  <MinParticleScale>0.1</MinParticleScale>
+</spaceship>
