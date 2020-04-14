@@ -1,0 +1,17 @@
+C:\Users\cadik\Documents\GitHub\spacegame\SpaceGame\bin\Debug\netcoreapp3.1\SpaceGame.exe
+C:\Users\cadik\Documents\GitHub\spacegame\SpaceGame\bin\Debug\netcoreapp3.1\SpaceGame.deps.json
+C:\Users\cadik\Documents\GitHub\spacegame\SpaceGame\bin\Debug\netcoreapp3.1\SpaceGame.runtimeconfig.json
+C:\Users\cadik\Documents\GitHub\spacegame\SpaceGame\bin\Debug\netcoreapp3.1\SpaceGame.runtimeconfig.dev.json
+C:\Users\cadik\Documents\GitHub\spacegame\SpaceGame\bin\Debug\netcoreapp3.1\SpaceGame.dll
+C:\Users\cadik\Documents\GitHub\spacegame\SpaceGame\bin\Debug\netcoreapp3.1\SpaceGame.pdb
+C:\Users\cadik\Documents\GitHub\spacegame\SpaceGame\bin\Debug\netcoreapp3.1\RayLib.NET.dll
+C:\Users\cadik\Documents\GitHub\spacegame\SpaceGame\bin\Debug\netcoreapp3.1\SharpNoise.dll
+C:\Users\cadik\Documents\GitHub\spacegame\SpaceGame\bin\Debug\netcoreapp3.1\SixLabors.Core.dll
+C:\Users\cadik\Documents\GitHub\spacegame\SpaceGame\bin\Debug\netcoreapp3.1\SixLabors.ImageSharp.dll
+C:\Users\cadik\Documents\GitHub\spacegame\SpaceGame\obj\Debug\netcoreapp3.1\SpaceGame.csproj.CoreCompileInputs.cache
+C:\Users\cadik\Documents\GitHub\spacegame\SpaceGame\obj\Debug\netcoreapp3.1\SpaceGame.AssemblyInfoInputs.cache
+C:\Users\cadik\Documents\GitHub\spacegame\SpaceGame\obj\Debug\netcoreapp3.1\SpaceGame.AssemblyInfo.cs
+C:\Users\cadik\Documents\GitHub\spacegame\SpaceGame\obj\Debug\netcoreapp3.1\SpaceGame.csproj.CopyComplete
+C:\Users\cadik\Documents\GitHub\spacegame\SpaceGame\obj\Debug\netcoreapp3.1\SpaceGame.dll
+C:\Users\cadik\Documents\GitHub\spacegame\SpaceGame\obj\Debug\netcoreapp3.1\SpaceGame.pdb
+C:\Users\cadik\Documents\GitHub\spacegame\SpaceGame\obj\Debug\netcoreapp3.1\SpaceGame.genruntimeconfig.cache

@@ -1,11 +1,11 @@
 {
   "runtimeTarget": {
-    "name": ".NETCoreApp,Version=v2.1",
+    "name": ".NETCoreApp,Version=v3.1",
     "signature": ""
   },
   "compilationOptions": {},
   "targets": {
-    ".NETCoreApp,Version=v2.1": {
+    ".NETCoreApp,Version=v3.1": {
       "SpaceGame/1.0.0": {
         "dependencies": {
           "Microsoft.CodeAnalysis.FxCopAnalyzers": "2.9.8",
@@ -70,14 +70,7 @@
           }
         }
       },
-      "System.Runtime.CompilerServices.Unsafe/4.5.1": {
-        "runtime": {
-          "lib/netcoreapp2.0/System.Runtime.CompilerServices.Unsafe.dll": {
-            "assemblyVersion": "4.0.4.0",
-            "fileVersion": "0.0.0.0"
-          }
-        }
-      }
+      "System.Runtime.CompilerServices.Unsafe/4.5.1": {}
     }
   },
   "libraries": {

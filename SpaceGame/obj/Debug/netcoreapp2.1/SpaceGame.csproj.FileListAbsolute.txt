@@ -21,3 +21,15 @@ H:\Programming\SpaceGame\SpaceGame\obj\Debug\netcoreapp2.1\SpaceGame.dll
 H:\Programming\SpaceGame\SpaceGame\obj\Debug\netcoreapp2.1\SpaceGame.pdb
 H:\Programming\SpaceGame\SpaceGame\obj\Debug\netcoreapp2.1\SpaceGame.csproj.CoreCompileInputs.cache
 H:\Programming\SpaceGame\SpaceGame\obj\Debug\netcoreapp2.1\SpaceGame.genruntimeconfig.cache
+C:\Users\cadik\Documents\GitHub\spacegame\SpaceGame\bin\Debug\netcoreapp2.1\SpaceGame.deps.json
+C:\Users\cadik\Documents\GitHub\spacegame\SpaceGame\bin\Debug\netcoreapp2.1\SpaceGame.runtimeconfig.json
+C:\Users\cadik\Documents\GitHub\spacegame\SpaceGame\bin\Debug\netcoreapp2.1\SpaceGame.runtimeconfig.dev.json
+C:\Users\cadik\Documents\GitHub\spacegame\SpaceGame\bin\Debug\netcoreapp2.1\SpaceGame.dll
+C:\Users\cadik\Documents\GitHub\spacegame\SpaceGame\bin\Debug\netcoreapp2.1\SpaceGame.pdb
+C:\Users\cadik\Documents\GitHub\spacegame\SpaceGame\obj\Debug\netcoreapp2.1\SpaceGame.csprojAssemblyReference.cache
+C:\Users\cadik\Documents\GitHub\spacegame\SpaceGame\obj\Debug\netcoreapp2.1\SpaceGame.csproj.CoreCompileInputs.cache
+C:\Users\cadik\Documents\GitHub\spacegame\SpaceGame\obj\Debug\netcoreapp2.1\SpaceGame.AssemblyInfoInputs.cache
+C:\Users\cadik\Documents\GitHub\spacegame\SpaceGame\obj\Debug\netcoreapp2.1\SpaceGame.AssemblyInfo.cs
+C:\Users\cadik\Documents\GitHub\spacegame\SpaceGame\obj\Debug\netcoreapp2.1\SpaceGame.dll
+C:\Users\cadik\Documents\GitHub\spacegame\SpaceGame\obj\Debug\netcoreapp2.1\SpaceGame.pdb
+C:\Users\cadik\Documents\GitHub\spacegame\SpaceGame\obj\Debug\netcoreapp2.1\SpaceGame.genruntimeconfig.cache
