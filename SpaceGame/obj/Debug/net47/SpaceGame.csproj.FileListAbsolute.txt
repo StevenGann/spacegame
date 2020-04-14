@@ -1,0 +1,5 @@
+C:\Users\cadik\Documents\GitHub\spacegame\SpaceGame\obj\Debug\net47\SpaceGame.csprojAssemblyReference.cache
+C:\Users\cadik\Documents\GitHub\spacegame\SpaceGame\obj\Debug\net47\SpaceGame.exe.config
+C:\Users\cadik\Documents\GitHub\spacegame\SpaceGame\obj\Debug\net47\SpaceGame.csproj.CoreCompileInputs.cache
+C:\Users\cadik\Documents\GitHub\spacegame\SpaceGame\obj\Debug\net47\SpaceGame.AssemblyInfoInputs.cache
+C:\Users\cadik\Documents\GitHub\spacegame\SpaceGame\obj\Debug\net47\SpaceGame.AssemblyInfo.cs

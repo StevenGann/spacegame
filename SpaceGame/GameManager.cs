@@ -58,7 +58,7 @@ namespace SpaceGame
             // =============================Camera Controls========================================
 
             float scrollAmount = Raylib.Raylib.GetMouseWheelMove();
-            float a = MathF.Abs(scrollAmount) * ViewScale * 100.0f;
+            float a = (float)Math.Abs(scrollAmount) * ViewScale * 100.0f;
             if (scrollAmount > 0)
             {
                 ViewScale *= 1.1f;
