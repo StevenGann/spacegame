@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "e6hv9nGJ6dkLxRUT7vKxFSLnboRZekDKFV1iwba+lqLn2bqf0iciDGDbikfZMvsShOchFJ/UwSS5+XbCfh/WWA==",
+  "dgSpecHash": "hzfrVrfI+Te9p9G9naIe63NgliVCGh8tEtKlq0Rzh9cSGCMo4zGuzrjOUpHlNhMeWQWeFW0EKcVGJIy45IjXRg==",
   "success": true,
   "projectFilePath": "C:\\Users\\cadik\\Documents\\GitHub\\spacegame\\SpaceGame\\SpaceGame.csproj",
   "expectedPackageFiles": [
@@ -9,19 +9,11 @@
     "C:\\Users\\cadik\\.nuget\\packages\\microsoft.codequality.analyzers\\2.9.8\\microsoft.codequality.analyzers.2.9.8.nupkg.sha512",
     "C:\\Users\\cadik\\.nuget\\packages\\microsoft.net.compilers.toolset\\3.1.0\\microsoft.net.compilers.toolset.3.1.0.nupkg.sha512",
     "C:\\Users\\cadik\\.nuget\\packages\\microsoft.netcore.analyzers\\2.9.8\\microsoft.netcore.analyzers.2.9.8.nupkg.sha512",
-    "C:\\Users\\cadik\\.nuget\\packages\\microsoft.netcore.app\\2.0.0\\microsoft.netcore.app.2.0.0.nupkg.sha512",
-    "C:\\Users\\cadik\\.nuget\\packages\\microsoft.netcore.dotnetapphost\\2.0.0\\microsoft.netcore.dotnetapphost.2.0.0.nupkg.sha512",
-    "C:\\Users\\cadik\\.nuget\\packages\\microsoft.netcore.dotnethostpolicy\\2.0.0\\microsoft.netcore.dotnethostpolicy.2.0.0.nupkg.sha512",
-    "C:\\Users\\cadik\\.nuget\\packages\\microsoft.netcore.dotnethostresolver\\2.0.0\\microsoft.netcore.dotnethostresolver.2.0.0.nupkg.sha512",
-    "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder\\microsoft.netcore.platforms\\2.0.0\\microsoft.netcore.platforms.2.0.0.nupkg.sha512",
     "C:\\Users\\cadik\\.nuget\\packages\\microsoft.netframework.analyzers\\2.9.8\\microsoft.netframework.analyzers.2.9.8.nupkg.sha512",
-    "C:\\Users\\cadik\\.nuget\\packages\\netstandard.library\\2.0.0\\netstandard.library.2.0.0.nupkg.sha512",
     "C:\\Users\\cadik\\.nuget\\packages\\raylib.net.x64\\1.0.0\\raylib.net.x64.1.0.0.nupkg.sha512",
     "C:\\Users\\cadik\\.nuget\\packages\\sharpnoise\\0.12.0\\sharpnoise.0.12.0.nupkg.sha512",
     "C:\\Users\\cadik\\.nuget\\packages\\sixlabors.core\\1.0.0-beta0008\\sixlabors.core.1.0.0-beta0008.nupkg.sha512",
     "C:\\Users\\cadik\\.nuget\\packages\\sixlabors.imagesharp\\1.0.0-beta0007\\sixlabors.imagesharp.1.0.0-beta0007.nupkg.sha512",
-    "C:\\Users\\cadik\\.nuget\\packages\\system.buffers\\4.4.0\\system.buffers.4.4.0.nupkg.sha512",
-    "C:\\Users\\cadik\\.nuget\\packages\\system.memory\\4.5.1\\system.memory.4.5.1.nupkg.sha512",
     "C:\\Users\\cadik\\.nuget\\packages\\system.runtime.compilerservices.unsafe\\4.5.1\\system.runtime.compilerservices.unsafe.4.5.1.nupkg.sha512"
   ],
   "logs": [
@@ -29,10 +21,10 @@
       "code": "NU1701",
       "level": "Warning",
       "warningLevel": 1,
-      "message": "Package 'RayLib.NET.x64 1.0.0' was restored using '.NETFramework,Version=v4.6.1, .NETFramework,Version=v4.6.2, .NETFramework,Version=v4.7, .NETFramework,Version=v4.7.1, .NETFramework,Version=v4.7.2, .NETFramework,Version=v4.8' instead of the project target framework '.NETCoreApp,Version=v2.0'. This package may not be fully compatible with your project.",
+      "message": "Package 'RayLib.NET.x64 1.0.0' was restored using '.NETFramework,Version=v4.6.1, .NETFramework,Version=v4.6.2, .NETFramework,Version=v4.7, .NETFramework,Version=v4.7.1, .NETFramework,Version=v4.7.2, .NETFramework,Version=v4.8' instead of the project target framework '.NETCoreApp,Version=v3.1'. This package may not be fully compatible with your project.",
       "libraryId": "RayLib.NET.x64",
       "targetGraphs": [
-        ".NETCoreApp,Version=v2.0"
+        ".NETCoreApp,Version=v3.1"
       ]
     }
   ]

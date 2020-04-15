@@ -23,7 +23,7 @@ namespace SpaceGame
         public double RateOfFire { get; set; } = 10.0;
         public Behaviors Behavior { get; set; } = Behaviors.Idle;
         public Stances Stance { get; set; } = Stances.Defend;
-        public int ShieldRebootProbability { get; set; } = 5;
+        public int ShieldRebootProbability { get; set; } = 4;
         public float CombatRange { get; set; } = -1;
         public List<SpaceShipHardpoint> Hardpoints { get; set; } = null;
         public SpaceShipUnit Unit { get; set; } = null;
