@@ -59,16 +59,18 @@ namespace SpaceGame
 
             float scrollAmount = Raylib.Raylib.GetMouseWheelMove();
             float a = (float)Math.Abs(scrollAmount) * ViewScale * 100.0f;
+            const float maxZoom = 4;
+            const float minZoom = 0.1f;
             if (scrollAmount > 0)
             {
                 ViewScale *= 1.1f;
-                if (ViewScale > 2) { ViewScale = 2; }
+                if (ViewScale > maxZoom) { ViewScale = maxZoom; }
                 else { ViewOffset -= new Vector2(a, a); }
             }
             if (scrollAmount < 0)
             {
                 ViewScale *= 0.9f;
-                if (ViewScale < 0.5) { ViewScale = 0.5f; }
+                if (ViewScale < minZoom) { ViewScale = minZoom; }
                 else { ViewOffset += new Vector2(a, a); }
             }
 

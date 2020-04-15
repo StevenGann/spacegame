@@ -114,56 +114,27 @@ namespace SpaceGame
         public static void Draw()
         {
             if (MouseState == MouseStates.Dragging)
-            {/*
-                Raylib.Raylib.DrawLine(//Top
-                    (int)(SelectionRectangle.x* GameManager.ViewScale + GameManager.ViewOffset.x),
-                    (int)(SelectionRectangle.y* GameManager.ViewScale + GameManager.ViewOffset.y),
-                    (int)(SelectionRectangle.x* GameManager.ViewScale + GameManager.ViewOffset.x + SelectionRectangle.width * GameManager.ViewScale),
-                    (int)(SelectionRectangle.y * GameManager.ViewScale + GameManager.ViewOffset.y),
-                    Color.GREEN
-                    );
-                Raylib.Raylib.DrawLine(//Bottom
-                    (int)(SelectionRectangle.x * GameManager.ViewScale + GameManager.ViewOffset.x),
-                    (int)(SelectionRectangle.y* GameManager.ViewScale + GameManager.ViewOffset.y + SelectionRectangle.height * GameManager.ViewScale),
-                    (int)(SelectionRectangle.x* GameManager.ViewScale + GameManager.ViewOffset.x + SelectionRectangle.width * GameManager.ViewScale),
-                    (int)(SelectionRectangle.y* GameManager.ViewScale + GameManager.ViewOffset.y + SelectionRectangle.height * GameManager.ViewScale),
-                    Color.GREEN
-                    );
-                Raylib.Raylib.DrawLine(//Left
-                    (int)(SelectionRectangle.x * GameManager.ViewScale + GameManager.ViewOffset.x),
-                    (int)(SelectionRectangle.y* GameManager.ViewScale + GameManager.ViewOffset.y),
-                    (int)(SelectionRectangle.x* GameManager.ViewScale + GameManager.ViewOffset.x),
-                    (int)(SelectionRectangle.y* GameManager.ViewScale + GameManager.ViewOffset.y + SelectionRectangle.height * GameManager.ViewScale),
-                    Color.GREEN
-                    );
-                Raylib.Raylib.DrawLine(//Right
-                    (int)(SelectionRectangle.x * GameManager.ViewScale + GameManager.ViewOffset.x + SelectionRectangle.width * GameManager.ViewScale),
-                    (int)(SelectionRectangle.y* GameManager.ViewScale + GameManager.ViewOffset.y),
-                    (int)(SelectionRectangle.x* GameManager.ViewScale + GameManager.ViewOffset.x + SelectionRectangle.width * GameManager.ViewScale),
-                    (int)(SelectionRectangle.y* GameManager.ViewScale + GameManager.ViewOffset.y + SelectionRectangle.height * GameManager.ViewScale),
-                    Color.GREEN
-                    );*/
+            {
                 Rectangle selrec = new Rectangle(
                     SelectionRectangle.x * GameManager.ViewScale + GameManager.ViewOffset.x,
                     SelectionRectangle.y * GameManager.ViewScale + GameManager.ViewOffset.y,
                     SelectionRectangle.width * GameManager.ViewScale,
                     SelectionRectangle.height * GameManager.ViewScale
                     );
-                //Raylib.Raylib.DrawRectangleLinesEx(SelectionRectangle, 1, Color.GREEN);
                 Raylib.Raylib.DrawTextureNPatch(selectTexture, npi, selrec, new Vector2(0, 0), 0, Color.WHITE);
             }
 
             int margin = 4;
             float mapTrayWidth = 300;
             float mapTrayHeight = 300;
-            float unitTrayWidth = ScreenWidth - (mapTrayWidth + 2*margin);
+            float unitTrayWidth = ScreenWidth - (mapTrayWidth + 2 * margin);
             float unitTrayHeight = 150;
             Raylib.Raylib.DrawTextureNPatch(panelTexture, npi, new Rectangle(0, ScreenHeight - mapTrayHeight, mapTrayWidth, mapTrayHeight), new Vector2(0, 0), 0, Color.WHITE);
             Raylib.Raylib.DrawTextureNPatch(panelTexture, npi, new Rectangle(mapTrayWidth + margin, ScreenHeight - unitTrayHeight, unitTrayWidth, unitTrayHeight), new Vector2(0, 0), 0, Color.WHITE);
             float unitHeight = 80;
             float unitWidth = 75;
-            
-            Vector2 startPos = new Vector2(3*margin + mapTrayWidth, (ScreenHeight - unitTrayHeight) + 2*margin);
+
+            Vector2 startPos = new Vector2(3 * margin + mapTrayWidth, (ScreenHeight - unitTrayHeight) + 2 * margin);
             int barWidth = (int)(unitWidth - margin * 2);
             int barHeight = 8;
             float barHalf = barWidth / 2f;
@@ -188,11 +159,11 @@ namespace SpaceGame
             }
 
             Vector2 mapOrigin = new Vector2(margin, (ScreenHeight - mapTrayHeight) + margin);
-            foreach(SpaceShipUnit unit in GameManager.Instance.Units)
+            foreach (SpaceShipUnit unit in GameManager.Instance.Units)
             {
                 if (unit.Active)
                 {
-                    Vector2 mapPos = unit.Location * 0.05f;                    
+                    Vector2 mapPos = unit.Location * 0.01f;
                     if (mapPos.x > 0 && mapPos.x < mapTrayWidth - 2 * margin && mapPos.y > 0 && mapPos.y < mapTrayHeight - 2 * margin)
                     {
                         Color col = Color.GRAY;
@@ -203,6 +174,11 @@ namespace SpaceGame
                     }
                 }
             }
+
+            Vector2 viewPos = mapOrigin - (GameManager.ViewOffset * 0.01f);
+            int viewW = (int)(1920 / GameManager.ViewScale * 0.01f);
+            int viewH = (int)(1080 / GameManager.ViewScale * 0.01f);
+            Raylib.Raylib.DrawRectangleLines((int)viewPos.x, (int)viewPos.y, viewW, viewH, Color.GREEN);
         }
 
         public static void GetSelection()

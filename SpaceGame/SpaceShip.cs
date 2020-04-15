@@ -28,6 +28,7 @@ namespace SpaceGame
         public List<SpaceShipHardpoint> Hardpoints { get; set; } = null;
         public SpaceShipUnit Unit { get; set; } = null;
         private Random RNG = new Random();
+        private int RandomOffset = -1;
         private double shotCooldown = 0.0;
         private double shotHeat = 0.0;
         private Vector2 attackOffset = new Vector2();
@@ -35,12 +36,7 @@ namespace SpaceGame
         public override void Tick(double Delta)
         {
             if (!Active) { return; }
-            /*
-            if (Location.x < 0) { Location = new Vector2(Location.x + 1920, Location.y); }
-            if (Location.x > 1920) { Location = new Vector2(Location.x - 1920, Location.y); }
-            if (Location.y < 0) { Location = new Vector2(Location.x, Location.y + 1200); }
-            if (Location.y > 1200) { Location = new Vector2(Location.x, Location.y - 1200); }
-            */
+
             if (Behavior == Behaviors.Idle)
             {
                 Throttle = 0;
@@ -64,15 +60,16 @@ namespace SpaceGame
                         SpaceObject[] nearTargets = GetTargets(Location, CombatRange);
                         if (nearTargets.Length > 0)
                         {
-                            Objective = nearTargets[0];
-
-                            if (Objective.Active == false)
+                            if (RandomOffset >= nearTargets.Length || RandomOffset < 0 || RNG.NextDouble() < 0.001)
                             {
+                                RandomOffset = RandomOffset = (int)Math.Floor(RNG.NextDouble() * nearTargets.Length);
                             }
 
+                            Objective = nearTargets[RandomOffset];
+
                             float distance = Raylib.Raylib.Vector2Distance(Objective.Location, Location);
-                            //if (RNG.Next(100) <= 200 / distance) { attackOffset = new Vector2(RNG.Next((int)(distance / 50)) - RNG.Next((int)(distance / 50)), RNG.Next((int)(distance / 50)) - RNG.Next((int)(distance / 50))); }
-                            Goal = (Objective as SpaceShip).GetLead(1 + distance / 50);// + attackOffset;
+                            if (RNG.Next(100) <= 200 / distance) { attackOffset = new Vector2(RNG.Next((int)(distance / 50)) - RNG.Next((int)(distance / 50)), RNG.Next((int)(distance / 50)) - RNG.Next((int)(distance / 50))); }
+                            Goal = (Objective as SpaceShip).GetLead(1 + distance / 50) + attackOffset;
 
                             double angleOffset = (AngleToPoint(this.Location, Goal) - Angle) + 90;
                             if (angleOffset > 180) { angleOffset -= 360; }

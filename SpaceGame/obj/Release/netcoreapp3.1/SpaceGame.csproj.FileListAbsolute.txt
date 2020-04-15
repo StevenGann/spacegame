@@ -15,3 +15,4 @@ C:\Users\cadik\Documents\GitHub\spacegame\SpaceGame\obj\Release\netcoreapp3.1\Sp
 C:\Users\cadik\Documents\GitHub\spacegame\SpaceGame\obj\Release\netcoreapp3.1\SpaceGame.dll
 C:\Users\cadik\Documents\GitHub\spacegame\SpaceGame\obj\Release\netcoreapp3.1\SpaceGame.pdb
 C:\Users\cadik\Documents\GitHub\spacegame\SpaceGame\obj\Release\netcoreapp3.1\SpaceGame.genruntimeconfig.cache
+C:\Users\cadik\Documents\GitHub\spacegame\SpaceGame\obj\Release\netcoreapp3.1\SpaceGame.csprojAssemblyReference.cache
