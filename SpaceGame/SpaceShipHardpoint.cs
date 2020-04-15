@@ -20,6 +20,7 @@ namespace SpaceGame
             Velocity = Parent.Velocity;
             Behavior = Parent.Behavior;
             Stance = Parent.Stance;
+            CombatRange = Parent.CombatRange;
         }
 
         public static Vector2 Rotate(Vector2 v, double degrees)

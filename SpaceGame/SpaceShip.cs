@@ -24,6 +24,7 @@ namespace SpaceGame
         public Behaviors Behavior { get; set; } = Behaviors.Idle;
         public Stances Stance { get; set; } = Stances.Defend;
         public int ShieldRebootProbability { get; set; } = 5;
+        public float CombatRange { get; set; } = -1;
         public List<SpaceShipHardpoint> Hardpoints { get; set; } = null;
         public SpaceShipUnit Unit { get; set; } = null;
         private Random RNG = new Random();
@@ -54,18 +55,24 @@ namespace SpaceGame
                     Shield += 1;
                 }
 
-                /*if (Stance == Stances.Defend)
+                if (Stance == Stances.Defend)
                 {
-                    if (Hardpoints != null) // If I've got hardpoints, let them deal with it.
+                    if (CombatRange <= 0) { CombatRange = MathF.Min(Texture.Texture.width, Texture.Texture.height) * 10; }
+
+                    if (Hardpoints == null) // If I've got hardpoints, let them deal with it.
                     {
-                        SpaceObject[] nearTargets = GetTargets(Location, Texture.Texture.width * 10f * Scale);
+                        SpaceObject[] nearTargets = GetTargets(Location, CombatRange);
                         if (nearTargets.Length > 0)
                         {
                             Objective = nearTargets[0];
 
+                            if (Objective.Active == false)
+                            {
+                            }
+
                             float distance = Raylib.Raylib.Vector2Distance(Objective.Location, Location);
-                            if (RNG.Next(100) <= 200 / distance) { attackOffset = new Vector2(RNG.Next((int)(distance / 50)) - RNG.Next((int)(distance / 50)), RNG.Next((int)(distance / 50)) - RNG.Next((int)(distance / 50))); }
-                            Goal = (Objective as SpaceShip).GetLead(1 + distance / 50) + attackOffset;
+                            //if (RNG.Next(100) <= 200 / distance) { attackOffset = new Vector2(RNG.Next((int)(distance / 50)) - RNG.Next((int)(distance / 50)), RNG.Next((int)(distance / 50)) - RNG.Next((int)(distance / 50))); }
+                            Goal = (Objective as SpaceShip).GetLead(1 + distance / 50);// + attackOffset;
 
                             double angleOffset = (AngleToPoint(this.Location, Goal) - Angle) + 90;
                             if (angleOffset > 180) { angleOffset -= 360; }
@@ -80,7 +87,7 @@ namespace SpaceGame
                             }
                         }
                     }
-                }*/
+                }
             }
             else if (Behavior == Behaviors.Attacking)
             {
@@ -107,7 +114,7 @@ namespace SpaceGame
                 else
                 {
                     AngularAcceleration = TurnSpeed * Math.Abs(Math.Pow(angleOffset, 2)) * angleOffset * Delta;
-                    if (shotCooldown <= 0) { Shoot(); }
+                    if (shotCooldown <= 0 && distance < CombatRange) { Shoot(); }
                 }
 
                 Throttle = Math.Pow(Math.Clamp((180 - angleOffset) / 180, 0.0, 1.0), 2);
@@ -180,7 +187,7 @@ namespace SpaceGame
                 }
             }
 
-            if (shotCooldown > 0) { shotCooldown -= 1 * Delta; }
+            if (shotCooldown > 0) { shotCooldown -= 1 * Delta * (RNG.NextDouble() + RNG.NextDouble() + RNG.NextDouble()); }
             if (shotHeat > 0) { shotHeat -= 0.1 * Delta; }
 
             if (Shield > 0 && Shield < MaxShield) { Shield += ShieldRegen; }
@@ -228,6 +235,11 @@ namespace SpaceGame
                 {
                     Raylib.Raylib.DrawRectangle((int)(loc.x - barHalf), (int)(loc.y + barOffset) + barHeight + 1, (int)Math.Round(barWidth * (Hull / MaxHull)), barHeight, Color.RED);
                     Raylib.Raylib.DrawRectangleLines((int)(loc.x - barHalf), (int)(loc.y + barOffset) + barHeight + 1, barWidth, barHeight, Color.DARKPURPLE);
+                }
+
+                if (Stance == Stances.Defend)
+                {
+                    Raylib.Raylib.DrawCircleLines((int)loc.x, (int)loc.y, CombatRange * GameManager.ViewScale, new Color(255, 0, 0, 32));
                 }
             }
         }

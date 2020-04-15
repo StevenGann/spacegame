@@ -68,6 +68,7 @@ namespace SpaceGame
                     Drag = 1,
                     AngularDrag = 1,
                     TurnSpeed = 1,
+                    RateOfFire = 2
                 };
                 //hp.Hitbox = Hitbox.Automatic(hp.Texture, 2);
                 hp.Hitbox = new Hitbox(hp.Texture.Texture.height / 2);
