@@ -2,7 +2,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Text;
+using Vector2 = Raylib.Vector2;
 
 namespace SpaceGame
 {
@@ -17,9 +19,11 @@ namespace SpaceGame
         public static List<SpaceShipUnit> SelectedUnits { get; set; } = new List<SpaceShipUnit>();
         public static int ScreenWidth = 1920;
         public static int ScreenHeight = 1080;
-
+        public const float MinimapSize = 512;
+        public static RenderTexture2D MinimapTexture = Raylib.Raylib.LoadRenderTexture((int)MinimapSize, (int)MinimapSize);
         private static Texture2D panelTexture = ResourceManager.GetTexture(@"ui\ninepatch_button").Texture;
         private static Texture2D selectTexture = ResourceManager.GetTexture(@"ui\selection_box").Texture;
+        private static List<Rectangle> Keepouts = new List<Rectangle>();
 
         private static NPatchInfo npi = new NPatchInfo()
         {
@@ -31,17 +35,23 @@ namespace SpaceGame
         };
 
         private static Random RNG = new Random();
+        private static Vector2 downLocationScreen = new Vector2();
 
         public static void Tick(double Delta)
         {
+            bool inKeepout = InKeepout(Raylib.Raylib.GetMousePosition());
+            //if (inKeepout) { Debug.WriteOverlay("In Keepout"); }
+
+            //Debug.WriteOverlay(MouseState.ToString());
             if (Raylib.Raylib.IsMouseButtonPressed(MouseButton.MOUSE_LEFT_BUTTON) && MouseState == MouseStates.Idle)
             {
+                downLocationScreen = Raylib.Raylib.GetMousePosition();
                 DownLocation = Raylib.Raylib.GetMousePosition() / GameManager.ViewScale - GameManager.ViewOffset / GameManager.ViewScale;
             }
-            else if (Raylib.Raylib.IsMouseButtonDown(MouseButton.MOUSE_LEFT_BUTTON))
+            else if (Raylib.Raylib.IsMouseButtonDown(MouseButton.MOUSE_LEFT_BUTTON) && !inKeepout)
             {
                 Vector2 mousePos = Raylib.Raylib.GetMousePosition() / GameManager.ViewScale - GameManager.ViewOffset / GameManager.ViewScale;
-                if (Raylib.Raylib.Vector2Distance(mousePos, DownLocation) > 64)
+                if (Raylib.Raylib.Vector2Distance(mousePos, DownLocation) > 64 && !InKeepout(downLocationScreen))
                 {
                     MouseState = MouseStates.Dragging;
                     SelectionRectangle = RecFromVec(DownLocation, mousePos);
@@ -109,10 +119,54 @@ namespace SpaceGame
                     }
                 }
             }
+            Raylib.Raylib.BeginTextureMode(MinimapTexture);
+            Texture2D bkgTex = ResourceManager.GetTexture(@"_menu\haze+").Texture;
+            Raylib.Raylib.DrawTexturePro(bkgTex, new Rectangle(0, 0, bkgTex.width, bkgTex.height), new Rectangle(0, 0, MinimapSize, MinimapSize), Vector2.Zero, 0.0f, Color.WHITE);
+            float scaleFactor = MinimapSize / GameManager.MapSize;
+            Vector2 origin = new Vector2(0, MinimapSize);
+
+            Debug.WriteOverlay("View Scale: " + GameManager.ViewScale);
+            Raylib.Raylib.BeginBlendMode(BlendMode.BLEND_ADDITIVE);
+            Vector2 TL = ScreenToWorld(new Vector2(0, ScreenHeight)) * scaleFactor;
+            Vector2 BR = ScreenToWorld(new Vector2(ScreenWidth, 0)) * scaleFactor;
+            Raylib.Raylib.DrawRectangle((int)TL.x, (int)(MinimapSize - TL.y), (int)(BR.x - TL.x), (int)(TL.y - BR.y), new Color(0, 255, 0, 16));
+
+            foreach (SpaceObject obj in GameManager.Instance.Objects)
+            {
+                if (obj.Active)
+                {
+                    Vector2 pos = (obj.Location * scaleFactor);
+                    pos = new Vector2(pos.x, MinimapSize - pos.y);
+                    //Raylib.Raylib.DrawCircleV(pos, 4, GameManager.FactionColors[obj.Faction].SetAlpha(32));// TODO: objects draw themselves
+                    obj.DrawMinimap(pos);
+                }
+            }
+            Raylib.Raylib.EndBlendMode();
+            Raylib.Raylib.EndTextureMode();
+        }
+
+        private static bool InKeepout(Vector2 point)
+        {
+            foreach (Rectangle rect in Keepouts)
+            {
+                if (Raylib.Raylib.CheckCollisionPointRec(point, rect))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private static Rectangle AddKeepout(Rectangle keepout)
+        {
+            Keepouts.Add(keepout);
+            return keepout;
         }
 
         public static void Draw()
         {
+            Keepouts.Clear();
+
             if (MouseState == MouseStates.Dragging)
             {
                 Rectangle selrec = new Rectangle(
@@ -129,8 +183,8 @@ namespace SpaceGame
             float mapTrayHeight = 300;
             float unitTrayWidth = ScreenWidth - (mapTrayWidth + 2 * margin);
             float unitTrayHeight = 150;
-            Raylib.Raylib.DrawTextureNPatch(panelTexture, npi, new Rectangle(0, ScreenHeight - mapTrayHeight, mapTrayWidth, mapTrayHeight), new Vector2(0, 0), 0, Color.WHITE);
-            Raylib.Raylib.DrawTextureNPatch(panelTexture, npi, new Rectangle(mapTrayWidth + margin, ScreenHeight - unitTrayHeight, unitTrayWidth, unitTrayHeight), new Vector2(0, 0), 0, Color.WHITE);
+            Raylib.Raylib.DrawTextureNPatch(panelTexture, npi, AddKeepout(new Rectangle(0, ScreenHeight - mapTrayHeight, mapTrayWidth, mapTrayHeight)), new Vector2(0, 0), 0, Color.WHITE);
+            Raylib.Raylib.DrawTextureNPatch(panelTexture, npi, AddKeepout(new Rectangle(mapTrayWidth + margin, ScreenHeight - unitTrayHeight, unitTrayWidth, unitTrayHeight)), new Vector2(0, 0), 0, Color.WHITE);
             float unitHeight = 80;
             float unitWidth = 75;
 
@@ -141,10 +195,10 @@ namespace SpaceGame
             float barOffset = unitTrayHeight - (barHeight * 4 + margin * 2);
             foreach (SpaceShipUnit unit in SelectedUnits)
             {
-                if (unit.Units.Count > 0)
+                if (unit != null && unit.Units.Count > 0)
                 {
                     Raylib.Raylib.DrawTextureNPatch(selectTexture, npi, new Rectangle(startPos.x - margin, startPos.y - margin, unitWidth + (2 * margin), unitTrayHeight - (2 * margin)), new Vector2(0, 0), 0, Color.WHITE);
-                    Texture2D tex = unit.Units[0].Texture.Texture;
+                    Texture2D tex = unit.UiImage.Texture;
                     float scalar = MathF.Min(MathF.Min(unitWidth / tex.width, unitHeight / tex.height), 1f);
                     Vector2 offset = new Vector2((unitWidth - (tex.width * scalar)) / 2f, (unitHeight - (tex.height * scalar)) / 2f);
                     Raylib.Raylib.DrawTextureEx(tex, startPos + offset, 0, scalar, Color.WHITE);
@@ -159,26 +213,16 @@ namespace SpaceGame
             }
 
             Vector2 mapOrigin = new Vector2(margin, (ScreenHeight - mapTrayHeight) + margin);
-            foreach (SpaceShipUnit unit in GameManager.Instance.Units)
-            {
-                if (unit.Active)
-                {
-                    Vector2 mapPos = unit.Location * 0.01f;
-                    if (mapPos.x > 0 && mapPos.x < mapTrayWidth - 2 * margin && mapPos.y > 0 && mapPos.y < mapTrayHeight - 2 * margin)
-                    {
-                        Color col = Color.GRAY;
-                        if (unit.Faction == 1) { col = Color.GREEN; }
-                        else if (unit.Faction == 2) { col = Color.RED; }
+            Raylib.Raylib.DrawTexturePro(MinimapTexture.texture, new Rectangle(0, 0, MinimapSize, MinimapSize), new Rectangle(mapOrigin.x, mapOrigin.y, 300 - 2 * margin, 300 - 2 * margin), Vector2.Zero, 0.0f, Color.WHITE);
 
-                        Raylib.Raylib.DrawCircleV(mapPos + mapOrigin, 2.5f, col);
-                    }
+            if (Debug.Enabled && !Debug.ConsoleIsOpen && Raylib.Raylib.IsKeyDown(KeyboardKey.KEY_F4))
+            {
+                Color c = new Color(255, 0, 0, 255);
+                foreach (Rectangle rec in Keepouts)
+                {
+                    Raylib.Raylib.DrawRectangleLinesEx(rec, 2, c);
                 }
             }
-
-            Vector2 viewPos = mapOrigin - (GameManager.ViewOffset * 0.01f);
-            int viewW = (int)(1920 / GameManager.ViewScale * 0.01f);
-            int viewH = (int)(1080 / GameManager.ViewScale * 0.01f);
-            Raylib.Raylib.DrawRectangleLines((int)viewPos.x, (int)viewPos.y, viewW, viewH, Color.GREEN);
         }
 
         public static void GetSelection()
@@ -256,7 +300,43 @@ namespace SpaceGame
                     }
                 }
             }
-            Console.WriteLine("Synced unit selection");
+            Debug.WriteLine("Synced unit selection");
+        }
+
+        public static Vector2 ScreenToWorld(Vector2 Point)
+        {
+            return Point / GameManager.ViewScale - GameManager.ViewOffset / GameManager.ViewScale;
+        }
+
+        public static Vector2 WorldToScreen(Vector2 Point)
+        {
+            return (Point * GameManager.ViewScale) + GameManager.ViewOffset;
+        }
+
+        public static Rectangle ScreenToWorld(Rectangle Box)
+        {
+            Vector2 TopLeft = ScreenToWorld(new Vector2(Box.x, Box.y));
+            Vector2 BottomRight = ScreenToWorld(new Vector2(Box.x + Box.width, Box.y + Box.height));
+            return new Rectangle()
+            {
+                x = TopLeft.x,
+                y = TopLeft.y,
+                width = BottomRight.x - TopLeft.x,
+                height = BottomRight.y - TopLeft.y
+            };
+        }
+
+        public static Rectangle WorldToScreen(Rectangle Box)
+        {
+            Vector2 TopLeft = WorldToScreen(new Vector2(Box.x, Box.y));
+            Vector2 BottomRight = WorldToScreen(new Vector2(Box.x + Box.width, Box.y + Box.height));
+            return new Rectangle()
+            {
+                x = TopLeft.x,
+                y = TopLeft.y,
+                width = BottomRight.x - TopLeft.x,
+                height = BottomRight.y - TopLeft.y
+            };
         }
 
         public static void Instantiate()

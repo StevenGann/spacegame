@@ -101,18 +101,22 @@ namespace SpaceGame
             {
                 if (Texture.Loaded == false)
                 {
-                    Console.WriteLine("Loading " + Texture.Name);
+                    Debug.WriteLine("Loading " + Texture.Name);
                 }
                 TextureOffset = new Vector2(Texture.Texture.width / 2, Texture.Texture.height / 2);
                 Initialized = true;
             }
 
+            if (MinParticleAlpha < 1.0) { Raylib.Raylib.BeginBlendMode(BlendMode.BLEND_ADDITIVE); }
             while (Particles.Count > 0)
             {
                 Particle p = Particles.Dequeue();
                 DrawParticle(p);
                 buffer.Enqueue(p);
             }
+
+            if (MinParticleAlpha < 1.0) { Raylib.Raylib.EndBlendMode(); }
+
             while (buffer.Count > 0)
             {
                 Particles.Enqueue(buffer.Dequeue());
@@ -178,7 +182,7 @@ namespace SpaceGame
                 catch (KeyNotFoundException e)
                 {
                     baseObject = Result;
-                    Console.WriteLine("XML Error: Failed to locate XML base " + baseName);
+                    Debug.WriteLine("XML Error: Failed to locate XML base " + baseName);
                 }
             }
 
@@ -222,9 +226,9 @@ namespace SpaceGame
                         }
                         catch (Exception e)
                         {
-                            Console.WriteLine("\nXMLParse Error");
-                            Console.WriteLine(e.Message);
-                            Console.WriteLine(attribute.OuterXml);
+                            Debug.WriteLine("\nXMLParse Error");
+                            Debug.WriteLine(e.Message);
+                            Debug.WriteLine(attribute.OuterXml);
                         }
                     }
                 }
@@ -267,9 +271,9 @@ namespace SpaceGame
                         }
                         catch (Exception e)
                         {
-                            Console.WriteLine("\nXMLParse Error");
-                            Console.WriteLine(e.Message);
-                            Console.WriteLine(node.OuterXml);
+                            Debug.WriteLine("\nXMLParse Error");
+                            Debug.WriteLine(e.Message);
+                            Debug.WriteLine(node.OuterXml);
                             return Default;
                         }
                     }

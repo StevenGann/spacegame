@@ -29,7 +29,7 @@ namespace SpaceGame
 #if DEBUG
                 throw new KeyNotFoundException(message);
 #else
-                Console.WriteLine(message);
+                Debug.WriteLine(message);
                 return null;
 #endif
             }
@@ -48,7 +48,7 @@ namespace SpaceGame
 #if DEBUG
                 throw new KeyNotFoundException(message);
 #else
-                Console.WriteLine(message);
+                Debug.WriteLine(message);
                 return null;
 #endif
             }
@@ -67,7 +67,7 @@ namespace SpaceGame
 #if DEBUG
                 throw new KeyNotFoundException(message);
 #else
-                Console.WriteLine(message);
+                Debug.WriteLine(message);
                 return null;
 #endif
             }
@@ -76,13 +76,14 @@ namespace SpaceGame
         public static void Load(string BasePath)
         {
             Instantiate();
-            Console.WriteLine("Loading Textures...");
+            Debug.WriteLine("Loading Textures...");
             tempPath = BasePath + imagesFolder;
             ProcessDirectory(tempPath, ".png", typeof(TextureResource));
-            Console.WriteLine("Loading XML...");
+            ProcessDirectory(tempPath, ".jpg", typeof(TextureResource));
+            Debug.WriteLine("Loading XML...");
             tempPath = BasePath + xmlFolder;
             ProcessDirectory(tempPath, ".xml", typeof(XmlResource));
-            Console.WriteLine("Loading Fonts...");
+            Debug.WriteLine("Loading Fonts...");
             tempPath = BasePath + fontsFolder;
             ProcessDirectory(tempPath, ".ttf", typeof(FontResource));
         }
@@ -105,8 +106,7 @@ namespace SpaceGame
                 {
                     string fn = fileName.Substring(tempPath.Length, fileName.Length - tempPath.Length).ToUpperInvariant();
                     fn = fn.Substring(0, fn.Length - Extension.Length);
-                    Console.Write("Name: ");
-                    Console.WriteLine(fn);
+                    Debug.WriteLine("Name: " + fn);
 
                     if (AssetType == typeof(TextureResource))
                     {
@@ -153,7 +153,7 @@ namespace SpaceGame
             {
                 if (kvp.Value.Loaded && kvp.Value.Users <= 0)
                 {
-                    Console.WriteLine("Unloading " + kvp.Value.Name);
+                    Debug.WriteLine("Unloading " + kvp.Value.Name);
                     kvp.Value.Loaded = false;
                 }
             }

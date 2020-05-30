@@ -1,7 +1,9 @@
 ﻿using Raylib;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using static Raylib.Raylib;
 
 namespace SpaceGame
@@ -17,6 +19,9 @@ namespace SpaceGame
         /// Opens or closes the in-game console, if Enabled.
         /// </summary>
         public static bool ConsoleIsOpen { get; set; }
+
+        public static Dictionary<string, Tuple<Func<List<string>, int>, string>> Commands { get; } = new Dictionary<string, Tuple<Func<List<string>, int>, string>>();
+        public static Dictionary<string, double> Flags { get; } = new Dictionary<string, double>();
 
         private static Debug instance;
         private Queue<DrawTextJob> textJobs = new Queue<DrawTextJob>();
@@ -34,6 +39,10 @@ namespace SpaceGame
         private int consoleSize;
         private int consoleMaxSize = 256;
         private bool initialized;
+        private static string terminalBuffer = "";
+        private static int terminalCursor = 0;
+        private static int blinkCounter = 0;
+        private static bool showCursor = true;
 
         /// <summary>
         /// Default constructor.
@@ -44,7 +53,45 @@ namespace SpaceGame
 #if DEBUG
             Debug.Enabled = true;
 #endif
+            Commands.Clear();
+
+            Commands.Add("help", new Tuple<Func<List<string>, int>, string>(CommandHelp, "Lists all commands with their descriptions"));
+            Commands.Add("flags", new Tuple<Func<List<string>, int>, string>(CommandFlags, "Lists all debug flags and their values>"));
+            Commands.Add("set", new Tuple<Func<List<string>, int>, string>(CommandSet, "Use: \"set <name> <value>\" Sets a debug flag <name> to <value>"));
+            Commands.Add("get", new Tuple<Func<List<string>, int>, string>(CommandGet, "Use: \"set <name>\" Prints a debug flag <name>"));
+
             consoleLines.Push("Console initialized.");
+        }
+
+        public static void RegisterCommand(string Name, Func<List<string>, int> Function, string Help)
+        {
+            if (instance == null) { instance = new Debug(); }
+            Commands.Add(Name.ToLower(), new Tuple<Func<List<string>, int>, string>(Function, Help));
+        }
+
+        public static void SetFlag(string Name, double Value)
+        {
+            if (Flags.ContainsKey(Name.ToUpperInvariant()))
+            {
+                Flags[Name.ToUpperInvariant()] = Value;
+            }
+            else
+            {
+                Flags.Add(Name.ToUpperInvariant(), Value);
+            }
+        }
+
+        public static double GetFlag(string Name)
+        {
+            if (Flags.ContainsKey(Name.ToUpperInvariant()))
+            {
+                return Flags[Name.ToUpperInvariant()];
+            }
+            else
+            {
+                Flags.Add(Name.ToUpperInvariant(), 0);
+                return 0;
+            }
         }
 
         /// <summary>
@@ -54,6 +101,19 @@ namespace SpaceGame
         public static void WriteLine(string text)
         {
             if (text == null) { return; }
+
+            if (text.Contains("\n"))
+            {
+                string[] tokens = text.Split("\n");
+                foreach (string line in tokens)
+                {
+                    if (!string.IsNullOrWhiteSpace(line))
+                    {
+                        WriteLine(line.Trim());
+                    }
+                }
+                return;
+            }
 
             if (text.StartsWith("%", StringComparison.Ordinal))
             {
@@ -165,7 +225,7 @@ namespace SpaceGame
         public static void Draw()
         {
             if (instance == null) { instance = new Debug(); }
-            Enabled = true;
+
             if (IsKeyPressed(KeyboardKey.KEY_F1))
             {
                 if (Enabled)
@@ -196,9 +256,7 @@ namespace SpaceGame
                     {
                         instance.consoleLines.Push(instance.consoleLinesBuffer.Pop());
                     }
-#pragma warning disable CA1303 // Do not pass literals as localized parameters
                     Debug.WriteLine("Trimmed debug console");
-#pragma warning restore CA1303 // Do not pass literals as localized parameters
                 }
             }
             if (!instance.initialized)
@@ -230,13 +288,18 @@ namespace SpaceGame
 
             if (instance.consoleSize > 0)
             {
+                UpdateTerminal();
+                //Debug.WriteOverlay(terminalBuffer.Insert(terminalCursor, showCursor ? "_" : " "));
+
                 DrawRectangle(0, 0, GetScreenWidth(), instance.consoleSize, instance.backgroundColor);
                 DrawLineEx(new Vector2(0, instance.consoleSize + 1), new Vector2(GetScreenWidth(), instance.consoleSize + 1), 2, Color.WHITE);
+                DrawLineEx(new Vector2(0, instance.consoleSize - instance.consoleFontSize - 1), new Vector2(GetScreenWidth(), instance.consoleSize - instance.consoleFontSize - 1), 1, Color.GRAY);
+                DrawTextEx(instance.font, terminalBuffer.Insert(terminalCursor, showCursor ? "_" : " "), new Vector2(4, instance.consoleSize - instance.consoleFontSize - 1), instance.consoleFontSize, 1.0f, instance.foregroundColor);
 
                 lock (instance.consoleLines)
                 {
                     p.x = 4;
-                    p.y = instance.consoleSize - instance.consoleFontSize;
+                    p.y = instance.consoleSize - (instance.consoleFontSize * 2) - 2;
                     int count = instance.consoleLines.Count;
                     for (int i = 0; i < Math.Min(instance.consoleMaxLines, count); i++)
                     {
@@ -324,6 +387,221 @@ namespace SpaceGame
                     p.y += instance.consoleFontSize;
                 }
             }
+        }
+
+        private static void UpdateTerminal()
+        {
+            if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_A)) { insertLetter("A"); }
+            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_B)) { insertLetter("B"); }
+            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_C)) { insertLetter("C"); }
+            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_D)) { insertLetter("D"); }
+            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_E)) { insertLetter("E"); }
+            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_F)) { insertLetter("F"); }
+            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_G)) { insertLetter("G"); }
+            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_H)) { insertLetter("H"); }
+            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_I)) { insertLetter("I"); }
+            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_J)) { insertLetter("J"); }
+            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_K)) { insertLetter("K"); }
+            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_L)) { insertLetter("L"); }
+            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_M)) { insertLetter("M"); }
+            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_N)) { insertLetter("N"); }
+            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_O)) { insertLetter("O"); }
+            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_P)) { insertLetter("P"); }
+            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_Q)) { insertLetter("Q"); }
+            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_R)) { insertLetter("R"); }
+            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_S)) { insertLetter("S"); }
+            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_T)) { insertLetter("T"); }
+            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_U)) { insertLetter("U"); }
+            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_V)) { insertLetter("V"); }
+            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_W)) { insertLetter("W"); }
+            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_X)) { insertLetter("X"); }
+            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_Y)) { insertLetter("Y"); }
+            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_Z)) { insertLetter("Z"); }
+            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_SPACE)) { insertLetter(" "); }
+            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_ONE)) { insertLetter("1", "!"); }
+            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_TWO)) { insertLetter("2", "@"); }
+            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_THREE)) { insertLetter("3", "#"); }
+            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_FOUR)) { insertLetter("4", "$"); }
+            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_FIVE)) { insertLetter("5", "%"); }
+            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_SIX)) { insertLetter("6", "^"); }
+            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_SEVEN)) { insertLetter("7", "&"); }
+            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_EIGHT)) { insertLetter("8", "*"); }
+            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_NINE)) { insertLetter("9", "("); }
+            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_ZERO)) { insertLetter("0", ")"); }
+            //else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_GRAVE)) { insertLetter("`", "~"); } //Backtick closes the terminal, so don't use it
+            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_MINUS)) { insertLetter("-", "_"); }
+            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_EQUAL)) { insertLetter("=", "+"); }
+            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_LEFT_BRACKET)) { insertLetter("[", "{"); }
+            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_RIGHT_BRACKET)) { insertLetter("]", "}"); }
+            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_BACKSLASH)) { insertLetter("\\", "|"); }
+            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_SEMICOLON)) { insertLetter(";", ":"); }
+            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_APOSTROPHE)) { insertLetter("'", "\""); }
+            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_COMMA)) { insertLetter(",", "<"); }
+            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_PERIOD)) { insertLetter(".", ">"); }
+            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_SLASH)) { insertLetter("/", "?"); }
+            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_BACKSPACE) || (Raylib.Raylib.IsKeyDown(KeyboardKey.KEY_BACKSPACE) && ((blinkCounter % 5) == 0)))
+            {
+                blinkCounter = 0;
+                if (terminalCursor > 0)
+                {
+                    terminalCursor -= 1;
+                    terminalBuffer = terminalBuffer.Remove(terminalCursor, 1);
+                }
+            }
+            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_DELETE))
+            {
+                terminalCursor = 0;
+                terminalBuffer = "";
+            }
+            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_LEFT) || (Raylib.Raylib.IsKeyDown(KeyboardKey.KEY_LEFT) && ((blinkCounter % 10) == 0)))
+            {
+                blinkCounter = 0;
+                if (terminalCursor > 0)
+                {
+                    terminalCursor -= 1;
+                }
+            }
+            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_RIGHT) || (Raylib.Raylib.IsKeyDown(KeyboardKey.KEY_RIGHT) && ((blinkCounter % 10) == 0)))
+            {
+                blinkCounter = 0;
+                if (terminalCursor < terminalBuffer.Length)
+                {
+                    terminalCursor += 1;
+                }
+            }
+            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_ENTER))
+            {
+                if (!string.IsNullOrWhiteSpace(terminalBuffer))
+                {
+                    WriteLine(terminalBuffer);
+                    ExecuteString(terminalBuffer);
+                }
+                terminalCursor = 0;
+                terminalBuffer = "";
+            }
+
+            blinkCounter++;
+            if ((blinkCounter % 30) == 0) { showCursor = !showCursor; }
+        }
+
+        private static void insertLetter(string Letter)
+        {
+            if (Raylib.Raylib.IsKeyDown(KeyboardKey.KEY_LEFT_SHIFT) || Raylib.Raylib.IsKeyDown(KeyboardKey.KEY_RIGHT_SHIFT))
+            {
+                terminalBuffer = terminalBuffer.Insert(terminalCursor, Letter.ToUpperInvariant());
+            }
+            else
+            {
+                terminalBuffer = terminalBuffer.Insert(terminalCursor, Letter.ToLower());
+            }
+            terminalCursor += 1;
+        }
+
+        private static void insertLetter(string Letter, string Shifted)
+        {
+            if (Raylib.Raylib.IsKeyDown(KeyboardKey.KEY_LEFT_SHIFT) || Raylib.Raylib.IsKeyDown(KeyboardKey.KEY_RIGHT_SHIFT))
+            {
+                if (string.IsNullOrEmpty(Shifted)) { return; }
+                terminalBuffer = terminalBuffer.Insert(terminalCursor, Shifted);
+            }
+            else
+            {
+                if (string.IsNullOrEmpty(Letter)) { return; }
+                terminalBuffer = terminalBuffer.Insert(terminalCursor, Letter);
+            }
+            terminalCursor += 1;
+        }
+
+        private static void ExecuteString(string Input)
+        {
+            try
+            {
+                string[] tokens = Regex.Split(Input, "(?<=^[^\"]*(?:\"[^\"]*\"[^\"]*)*) (?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)");
+                if (tokens.Length > 0)
+                {
+                    string command = tokens[0].ToLowerInvariant();
+                    if (Commands.ContainsKey(command))
+                    {
+                        List<string> parameters = null;
+
+                        if (tokens.Length > 1)
+                        {
+                            parameters = new List<string>();
+                            for (int i = 1; i < tokens.Length; i++)
+                            {
+                                parameters.Add(tokens[i]);
+                            }
+                        }
+
+                        int result = Commands[command].Item1(parameters);
+                        if (result != 0)
+                        {
+                            throw new Exception("Command \"" + command + "\" returned a non-zero status " + result.ToString());
+                        }
+                    }
+                    else
+                    {
+                        throw new Exception("Command not found: " + command);
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                WriteLine("%ERROR%[CONSOLE ERROR]");
+                WriteLine("%ERROR%" + e.Message);
+            }
+        }
+
+        private int CommandHelp(List<string> arg)
+        {
+            WriteLine("Console Commands:");
+
+            foreach (string command in Commands.Keys)
+            {
+                //Tuple<Func<List<string>, int>, string>
+                string description = Commands[command].Item2;
+                WriteLine(command.ToLower() + " :\t\t" + description);
+            }
+
+            return 0;
+        }
+
+        private int CommandGet(List<string> arg)
+        {
+            if (arg == null || arg.Count != 1) { Debug.WriteLine("%WARNING%Usage: \"get <name>\""); return 1; }
+            double value = GetFlag(arg[0]);
+            WriteLine(arg[0].ToUpperInvariant() + " = " + value.ToString());
+            return 0;
+        }
+
+        private int CommandSet(List<string> arg)
+        {
+            if (arg == null || arg.Count != 2) { Debug.WriteLine("%WARNING%Usage: \"set <name> <value>\""); return 1; }
+
+            try
+            {
+                double value = double.Parse(arg[1]);
+                SetFlag(arg[0], value);
+                WriteLine(arg[0].ToUpperInvariant() + " = " + GetFlag(arg[0]).ToString());
+            }
+            catch { Debug.WriteLine("%ERROR%Failed to parse \"" + arg[1] + "\""); return 1; }
+            return 0;
+        }
+
+        private int CommandFlags(List<string> arg)
+        {
+            if (Flags.Keys.Count == 0)
+            {
+                WriteLine("No flags have been created");
+                return 0;
+            }
+
+            List<string> names = Flags.Keys.ToList<string>();
+            foreach (string name in names)
+            {
+                WriteLine(name + "\t = " + Flags[name].ToString());
+            }
+            return 0;
         }
 
         private struct DrawTextJob

@@ -19,6 +19,8 @@ namespace SpaceGame
             Location = Parent.Location + Rotate(Offset, Parent.Angle);
             Velocity = Parent.Velocity;
             Behavior = Parent.Behavior;
+            Faction = Parent.Faction;
+            if (Behavior == Behaviors.Going) { Behavior = Behaviors.Idle; }
             Stance = Parent.Stance;
             CombatRange = Parent.CombatRange;
         }
@@ -44,7 +46,7 @@ namespace SpaceGame
             {
                 Result = new SpaceShipHardpoint();
             }
-            Result = SpaceShipHardpoint.FromXml(Xml, Result) as SpaceShipHardpoint;
+            Result = SpaceShip.FromXml(Xml, Result) as SpaceShipHardpoint;
 
             XmlNode obj = Xml.Xml.LastChild;
 
@@ -63,6 +65,9 @@ namespace SpaceGame
                 }
             }
 
+            string[] offsetRaw = GetXmlText(obj, "Offset", "0,0").Split(',');
+            Result.Offset = new Vector2(float.Parse(offsetRaw[0]), float.Parse(offsetRaw[1]));
+            Result.Texture = ResourceManager.GetTexture(GetXmlText(obj, "Texture", baseObject.Texture.Name));
             return Result;
         }
 
@@ -81,9 +86,9 @@ namespace SpaceGame
                         }
                         catch (Exception e)
                         {
-                            Console.WriteLine("\nXMLParse Error");
-                            Console.WriteLine(e.Message);
-                            Console.WriteLine(attribute.OuterXml);
+                            Debug.WriteLine("\nXMLParse Error");
+                            Debug.WriteLine(e.Message);
+                            Debug.WriteLine(attribute.OuterXml);
                         }
                     }
                 }

@@ -79,7 +79,7 @@ namespace SpaceGame
             {
                 if (Texture.Loaded == false)
                 {
-                    Console.WriteLine("Loading " + Texture.Name);
+                    Debug.WriteLine("Loading " + Texture.Name);
                 }
                 TextureOffset = new Vector2(Texture.Texture.width / 2, Texture.Texture.height / 2);
                 Initialized = true;
@@ -95,12 +95,12 @@ namespace SpaceGame
             //Raylib.Raylib.DrawTextureEx(Texture.Texture, RotateAroundPoint(Location - TextureOffset, Location, Angle), (float)Angle, 1.0f, Color.WHITE);
             Raylib.Raylib.DrawTexturePro(Texture.Texture, new Rectangle(0, 0, Texture.Texture.width, Texture.Texture.height), new Rectangle(loc.x, loc.y, Texture.Texture.width * Scale * GameManager.ViewScale, Texture.Texture.height * Scale * GameManager.ViewScale), TextureOffset * Scale * GameManager.ViewScale, (float)Angle, Color.WHITE);
 
-            if (Hitbox != null && Raylib.Raylib.IsKeyDown(KeyboardKey.KEY_H)) { Hitbox.Draw(loc, (float)(Angle * 0.0174533), GameManager.ViewScale * Scale); }
+            if (Hitbox != null && Debug.Enabled && !Debug.ConsoleIsOpen && Raylib.Raylib.IsKeyDown(KeyboardKey.KEY_F3)) { Hitbox.Draw(loc, (float)(Angle * 0.0174533), GameManager.ViewScale * Scale); }
         }
 
         public static SpaceObject FromXml(XmlResource Xml, SpaceObject DstObject)
         {
-            if (Xml == null) { throw new ArgumentNullException("Xml"); }
+            if (Xml == null) { throw new ArgumentNullException(nameof(Xml)); }
             SpaceObject Result = DstObject;
             if (DstObject == null)
             {
@@ -120,7 +120,7 @@ namespace SpaceGame
                 catch (KeyNotFoundException e)
                 {
                     baseObject = Result;
-                    Console.WriteLine("XML Error: Failed to locate XML base " + baseName);
+                    Debug.WriteLine("XML Error: Failed to locate XML base " + baseName);
                 }
             }
 
@@ -180,9 +180,9 @@ namespace SpaceGame
                         }
                         catch (Exception e)
                         {
-                            Console.WriteLine("\nXMLParse Error");
-                            Console.WriteLine(e.Message);
-                            Console.WriteLine(attribute.OuterXml);
+                            Debug.WriteLine("\nXMLParse Error");
+                            Debug.WriteLine(e.Message);
+                            Debug.WriteLine(attribute.OuterXml);
                         }
                     }
                 }
@@ -225,15 +225,30 @@ namespace SpaceGame
                         }
                         catch (Exception e)
                         {
-                            Console.WriteLine("\nXMLParse Error");
-                            Console.WriteLine(e.Message);
-                            Console.WriteLine(node.OuterXml);
+                            Debug.WriteLine("\nXMLParse Error");
+                            Debug.WriteLine(e.Message);
+                            Debug.WriteLine(node.OuterXml);
                             return Default;
                         }
                     }
                 }
             }
             return Default;
+        }
+
+        public void DrawMinimap(Vector2 Location)
+        {
+            if (!(this is SpaceEffect))
+            {
+                if (this is SpaceProjectile)
+                {
+                    Raylib.Raylib.DrawCircleV(Location, 1, GameManager.FactionColors[Faction].SetAlpha(32));
+                }
+                else
+                {
+                    Raylib.Raylib.DrawCircleV(Location, MathF.Sqrt(Texture.Texture.width * Scale), GameManager.FactionColors[Faction].SetAlpha(32));
+                }
+            }
         }
 
         private static string GetXmlText(XmlNode Parent, string Name, string Default)

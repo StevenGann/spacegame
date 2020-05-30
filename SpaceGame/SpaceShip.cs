@@ -1,4 +1,5 @@
-﻿using Raylib;
+﻿using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Raylib;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
@@ -32,114 +33,262 @@ namespace SpaceGame
         private double shotCooldown = 0.0;
         private double shotHeat = 0.0;
         private Vector2 attackOffset = new Vector2();
+        private dynamic tickScript = null;
+        private bool isLeader = true;
+        private SpaceShip leader = null;
 
         public override void Tick(double Delta)
         {
             if (!Active) { return; }
+            isLeader = Unit == null || Unit.Formation == null || this == Unit.Units[0];
 
-            if (Behavior == Behaviors.Idle)
+            if (!isLeader)
             {
-                Throttle = 0;
-                if (Velocity.Length() > 0)
-                {
-                    Velocity = Velocity.Length() * 0.95f * Vector2.Normalize(Velocity);
-                }
-                AngularAcceleration = 0;
+                leader = Unit.Units[0];
+                Behavior = leader.Behavior;
+                Stance = leader.Stance;
+            }
 
-                if (Shield <= 0 && RNG.Next(100 * 60) < ShieldRebootProbability)
+            if (isLeader)
+            {
+                if (Behavior == Behaviors.Idle)
                 {
-                    Shield += 1;
-                }
-
-                if (Stance == Stances.Defend)
-                {
-                    if (CombatRange <= 0) { CombatRange = MathF.Min(Texture.Texture.width, Texture.Texture.height) * 10; }
-
-                    if (Hardpoints == null) // If I've got hardpoints, let them deal with it.
+                    Throttle = 0;
+                    if (Velocity.Length() > 0)
                     {
-                        SpaceObject[] nearTargets = GetTargets(Location, CombatRange);
-                        if (nearTargets.Length > 0)
+                        Velocity = Velocity.Length() * 0.95f * Vector2.Normalize(Velocity);
+                    }
+                    AngularAcceleration = 0;
+
+                    if (Shield <= 0 && RNG.Next(100 * 60) < ShieldRebootProbability)
+                    {
+                        Shield += 1;
+                    }
+
+                    if (Stance == Stances.Defend)
+                    {
+                        if (CombatRange <= 0) { CombatRange = MathF.Min(Texture.Texture.width, Texture.Texture.height) * 10; }
+
+                        if (Hardpoints == null) // If I've got hardpoints, let them deal with it.
                         {
-                            if (RandomOffset >= nearTargets.Length || RandomOffset < 0 || RNG.NextDouble() < 0.001)
+                            SpaceObject[] nearTargets = GetTargets(Location, CombatRange);
+                            if (nearTargets.Length > 0)
                             {
-                                RandomOffset = RandomOffset = (int)Math.Floor(RNG.NextDouble() * nearTargets.Length);
+                                if (RandomOffset >= nearTargets.Length || RandomOffset < 0 || RNG.NextDouble() < 0.001)
+                                {
+                                    RandomOffset = RandomOffset = (int)Math.Floor(RNG.NextDouble() * nearTargets.Length);
+                                }
+
+                                Objective = nearTargets[RandomOffset];
+
+                                float distance = Raylib.Raylib.Vector2Distance(Objective.Location, Location);
+                                if (RNG.Next(100) <= 200 / distance) { attackOffset = new Vector2(RNG.Next((int)(distance / 50)) - RNG.Next((int)(distance / 50)), RNG.Next((int)(distance / 50)) - RNG.Next((int)(distance / 50))); }
+                                Goal = (Objective as SpaceShip).GetLead(1 + distance / 50) + attackOffset;
+
+                                double angleOffset = (AngleToPoint(this.Location, Goal) - Angle) + 90;
+                                if (angleOffset > 180) { angleOffset -= 360; }
+                                if (angleOffset < -180) { angleOffset += 360; }
+
+                                if (angleOffset > 1) { AngularAcceleration = TurnSpeed * Delta; }
+                                else if (angleOffset < -1) { AngularAcceleration = -TurnSpeed * Delta; }
+                                else
+                                {
+                                    AngularAcceleration = TurnSpeed * Math.Abs(Math.Pow(angleOffset, 2)) * angleOffset * Delta;
+                                    if (shotCooldown <= 0) { Shoot(); }
+                                }
                             }
+                        }
+                    }
+                }
+                else if (Behavior == Behaviors.Attacking)
+                {
+                    if (Objective == this || Objective.Active == false) { Behavior = Behaviors.Idle; }
 
-                            Objective = nearTargets[RandomOffset];
+                    float distance = Raylib.Raylib.Vector2Distance(Objective.Location, Location);
+                    if (RNG.Next(100) <= 200 / distance) { attackOffset = new Vector2(RNG.Next((int)(distance / 50)) - RNG.Next((int)(distance / 50)), RNG.Next((int)(distance / 50)) - RNG.Next((int)(distance / 50))); }
 
-                            float distance = Raylib.Raylib.Vector2Distance(Objective.Location, Location);
-                            if (RNG.Next(100) <= 200 / distance) { attackOffset = new Vector2(RNG.Next((int)(distance / 50)) - RNG.Next((int)(distance / 50)), RNG.Next((int)(distance / 50)) - RNG.Next((int)(distance / 50))); }
-                            Goal = (Objective as SpaceShip).GetLead(1 + distance / 50) + attackOffset;
+                    if (Objective is SpaceShip)
+                    {
+                        Goal = (Objective as SpaceShip).GetLead(1 + distance / 50) + attackOffset;
+                    }
+                    else
+                    {
+                        Goal = Objective.Location + attackOffset;
+                    }
 
-                            double angleOffset = (AngleToPoint(this.Location, Goal) - Angle) + 90;
-                            if (angleOffset > 180) { angleOffset -= 360; }
-                            if (angleOffset < -180) { angleOffset += 360; }
+                    double angleOffset = (AngleToPoint(this.Location, Goal) - Angle) + 90;
+                    if (angleOffset > 180) { angleOffset -= 360; }
+                    if (angleOffset < -180) { angleOffset += 360; }
 
-                            if (angleOffset > 1) { AngularAcceleration = TurnSpeed * Delta; }
-                            else if (angleOffset < -1) { AngularAcceleration = -TurnSpeed * Delta; }
-                            else
+                    if (angleOffset > 1) { AngularAcceleration = TurnSpeed * Delta; }
+                    else if (angleOffset < -1) { AngularAcceleration = -TurnSpeed * Delta; }
+                    else
+                    {
+                        AngularAcceleration = TurnSpeed * Math.Abs(Math.Pow(angleOffset, 2)) * angleOffset * Delta;
+                        if (shotCooldown <= 0 && distance < CombatRange) { Shoot(); }
+                    }
+
+                    Throttle = Math.Pow(Math.Clamp((180 - angleOffset) / 180, 0.0, 1.0), 2);
+                }
+                else if (Behavior == Behaviors.Going)
+                {
+                    Vector2 goal = Goal;
+                    if (Unit != null && Unit.Formation != null && this != Unit.Units[0])
+                    {
+                        goal = Unit.Formation.GetLocation(this, Texture.Texture.width * 0.5f);
+                    }
+                    Vector2 nudge = Unit.Formation.GetLocation(this, Texture.Texture.width * 0.5f);
+                    double angleOffset = (AngleToPoint(this.Location, goal) - Angle) + 90;
+                    if (angleOffset > 180) { angleOffset -= 360; }
+                    if (angleOffset < -180) { angleOffset += 360; }
+
+                    if (angleOffset > 1) { AngularAcceleration = TurnSpeed * Delta; }
+                    else if (angleOffset < -1) { AngularAcceleration = -TurnSpeed * Delta; }
+                    else
+                    {
+                        AngularAcceleration = TurnSpeed * Math.Abs(Math.Pow(angleOffset, 2)) * angleOffset * Delta;
+                    }
+
+                    Throttle = Math.Pow(Math.Clamp((180 - angleOffset) / 180, 0.0, 1.0), 2);
+
+                    if (Raylib.Raylib.Vector2Distance(Location, goal) < Velocity.Length() * 60 * 10)
+                    {
+                        if (Raylib.Raylib.Vector2Distance(Location, goal) < Texture.Texture.height)
+                        {
+                            Behavior = Behaviors.Idle;
+                        }
+                        else
+                        {
+                            Throttle *= (Raylib.Raylib.Vector2Distance(Location, goal) / ((Velocity.Length() * 120) + 1)) * 0.75;
+                        }
+                    }
+
+                    if (Stance == Stances.Defend)
+                    {
+                        if (CombatRange <= 0) { CombatRange = MathF.Min(Texture.Texture.width, Texture.Texture.height) * 10; }
+
+                        if (Hardpoints == null) // If I've got hardpoints, let them deal with it.
+                        {
+                            SpaceObject[] nearTargets = GetTargets(Location, MathF.Sqrt(Velocity.Length()) * 0.75f * CombatRange);
+                            if (nearTargets.Length > 0)
                             {
-                                AngularAcceleration = TurnSpeed * Math.Abs(Math.Pow(angleOffset, 2)) * angleOffset * Delta;
-                                if (shotCooldown <= 0) { Shoot(); }
+                                if (RandomOffset >= nearTargets.Length || RandomOffset < 0 || RNG.NextDouble() < 0.001)
+                                {
+                                    RandomOffset = RandomOffset = (int)Math.Floor(RNG.NextDouble() * nearTargets.Length);
+                                }
+
+                                float distance = Raylib.Raylib.Vector2Distance(nearTargets[RandomOffset].Location, Location);
+                                if (RNG.Next(100) <= 200 / distance) { attackOffset = new Vector2(RNG.Next((int)(distance / 50)) - RNG.Next((int)(distance / 50)), RNG.Next((int)(distance / 50)) - RNG.Next((int)(distance / 50))); }
+                                Vector2 incidentalGoal = (nearTargets[RandomOffset] as SpaceShip).GetLead(1 + distance / 50) + attackOffset;
+
+                                angleOffset = (AngleToPoint(this.Location, incidentalGoal) - Angle) + 90;
+                                if (angleOffset > 180) { angleOffset -= 360; }
+                                if (angleOffset < -180) { angleOffset += 360; }
+
+                                if (Math.Abs(angleOffset) < 5)
+                                {
+                                    //AngularAcceleration = TurnSpeed * Math.Abs(Math.Pow(angleOffset, 2)) * angleOffset * Delta;
+                                    if (shotCooldown <= 0) { Shoot(); }
+                                }
                             }
                         }
                     }
                 }
             }
-            else if (Behavior == Behaviors.Attacking)
+            else
             {
-                if (Objective == this || Objective.Active == false) { Behavior = Behaviors.Idle; }
-
-                float distance = Raylib.Raylib.Vector2Distance(Objective.Location, Location);
-                if (RNG.Next(100) <= 200 / distance) { attackOffset = new Vector2(RNG.Next((int)(distance / 50)) - RNG.Next((int)(distance / 50)), RNG.Next((int)(distance / 50)) - RNG.Next((int)(distance / 50))); }
-
-                if (Objective is SpaceShip)
+                if (Behavior == Behaviors.Attacking)
                 {
-                    Goal = (Objective as SpaceShip).GetLead(1 + distance / 50) + attackOffset;
-                }
-                else
-                {
-                    Goal = Objective.Location + attackOffset;
-                }
+                    if (Objective == this || Objective.Active == false) { Behavior = Behaviors.Idle; }
 
-                double angleOffset = (AngleToPoint(this.Location, Goal) - Angle) + 90;
-                if (angleOffset > 180) { angleOffset -= 360; }
-                if (angleOffset < -180) { angleOffset += 360; }
+                    float distance = Raylib.Raylib.Vector2Distance(Objective.Location, Location);
+                    if (RNG.Next(100) <= 200 / distance) { attackOffset = new Vector2(RNG.Next((int)(distance / 50)) - RNG.Next((int)(distance / 50)), RNG.Next((int)(distance / 50)) - RNG.Next((int)(distance / 50))); }
 
-                if (angleOffset > 1) { AngularAcceleration = TurnSpeed * Delta; }
-                else if (angleOffset < -1) { AngularAcceleration = -TurnSpeed * Delta; }
-                else
-                {
-                    AngularAcceleration = TurnSpeed * Math.Abs(Math.Pow(angleOffset, 2)) * angleOffset * Delta;
-                    if (shotCooldown <= 0 && distance < CombatRange) { Shoot(); }
-                }
-
-                Throttle = Math.Pow(Math.Clamp((180 - angleOffset) / 180, 0.0, 1.0), 2);
-            }
-            else if (Behavior == Behaviors.Going)
-            {
-                double angleOffset = (AngleToPoint(this.Location, Goal) - Angle) + 90;
-                if (angleOffset > 180) { angleOffset -= 360; }
-                if (angleOffset < -180) { angleOffset += 360; }
-
-                if (angleOffset > 1) { AngularAcceleration = TurnSpeed * Delta; }
-                else if (angleOffset < -1) { AngularAcceleration = -TurnSpeed * Delta; }
-                else
-                {
-                    AngularAcceleration = TurnSpeed * Math.Abs(Math.Pow(angleOffset, 2)) * angleOffset * Delta;
-                }
-
-                Throttle = Math.Pow(Math.Clamp((180 - angleOffset) / 180, 0.0, 1.0), 2);
-
-                if (Raylib.Raylib.Vector2Distance(Location, Goal) < Velocity.Length() * 60 * 10)
-                {
-                    if (Raylib.Raylib.Vector2Distance(Location, Goal) < Texture.Texture.height)
+                    if (Objective is SpaceShip)
                     {
-                        Behavior = Behaviors.Idle;
+                        Goal = (Objective as SpaceShip).GetLead(1 + distance / 50) + attackOffset;
                     }
                     else
                     {
-                        Throttle *= (Raylib.Raylib.Vector2Distance(Location, Goal) / ((Velocity.Length() * 120) + 1)) * 0.75;
+                        Goal = Objective.Location + attackOffset;
+                    }
+
+                    double angleOffset = (AngleToPoint(this.Location, Goal) - Angle) + 90;
+                    if (angleOffset > 180) { angleOffset -= 360; }
+                    if (angleOffset < -180) { angleOffset += 360; }
+
+                    if (angleOffset > 1) { AngularAcceleration = TurnSpeed * Delta; }
+                    else if (angleOffset < -1) { AngularAcceleration = -TurnSpeed * Delta; }
+                    else
+                    {
+                        AngularAcceleration = TurnSpeed * Math.Abs(Math.Pow(angleOffset, 2)) * angleOffset * Delta;
+                        if (shotCooldown <= 0 && distance < CombatRange) { Shoot(); }
+                    }
+
+                    Throttle = Math.Pow(Math.Clamp((180 - angleOffset) / 180, 0.0, 1.0), 2);
+                }
+                else if (Behavior == Behaviors.Idle || Behavior == Behaviors.Going)
+                {
+                    Vector2 goal = Goal;
+                    if (Unit != null && Unit.Formation != null && this != Unit.Units[0])
+                    {
+                        goal = Unit.Formation.GetLocation(this, Texture.Texture.width * 0.5f);
+                    }
+                    Vector2 nudge = Unit.Formation.GetLocation(this, Texture.Texture.width * 0.5f);
+                    double angleOffset = (AngleToPoint(this.Location, goal) - Angle) + 90;
+                    if (angleOffset > 180) { angleOffset -= 360; }
+                    if (angleOffset < -180) { angleOffset += 360; }
+
+                    if (angleOffset > 1) { AngularAcceleration = TurnSpeed * Delta; }
+                    else if (angleOffset < -1) { AngularAcceleration = -TurnSpeed * Delta; }
+                    else
+                    {
+                        AngularAcceleration = TurnSpeed * Math.Abs(Math.Pow(angleOffset, 2)) * angleOffset * Delta;
+                    }
+
+                    Throttle = Math.Pow(Math.Clamp((180 - angleOffset) / 180, 0.0, 1.0), 2);
+
+                    if (Raylib.Raylib.Vector2Distance(Location, goal) < Velocity.Length() * 60 * 10)
+                    {
+                        if (Raylib.Raylib.Vector2Distance(Location, goal) < Texture.Texture.height)
+                        {
+                            Behavior = Behaviors.Idle;
+                        }
+                        else
+                        {
+                            Throttle *= (Raylib.Raylib.Vector2Distance(Location, goal) / ((Velocity.Length() * 120) + 1)) * 0.75;
+                        }
+                    }
+
+                    if (Stance == Stances.Defend)
+                    {
+                        if (CombatRange <= 0) { CombatRange = MathF.Min(Texture.Texture.width, Texture.Texture.height) * 10; }
+
+                        if (Hardpoints == null) // If I've got hardpoints, let them deal with it.
+                        {
+                            SpaceObject[] nearTargets = GetTargets(Location, MathF.Sqrt(Velocity.Length()) * 0.75f * CombatRange);
+                            if (nearTargets.Length > 0)
+                            {
+                                if (RandomOffset >= nearTargets.Length || RandomOffset < 0 || RNG.NextDouble() < 0.001)
+                                {
+                                    RandomOffset = RandomOffset = (int)Math.Floor(RNG.NextDouble() * nearTargets.Length);
+                                }
+
+                                float distance = Raylib.Raylib.Vector2Distance(nearTargets[RandomOffset].Location, Location);
+                                if (RNG.Next(100) <= 200 / distance) { attackOffset = new Vector2(RNG.Next((int)(distance / 50)) - RNG.Next((int)(distance / 50)), RNG.Next((int)(distance / 50)) - RNG.Next((int)(distance / 50))); }
+                                Vector2 incidentalGoal = (nearTargets[RandomOffset] as SpaceShip).GetLead(1 + distance / 50) + attackOffset;
+
+                                angleOffset = (AngleToPoint(this.Location, incidentalGoal) - Angle) + 90;
+                                if (angleOffset > 180) { angleOffset -= 360; }
+                                if (angleOffset < -180) { angleOffset += 360; }
+
+                                if (Math.Abs(angleOffset) < 5)
+                                {
+                                    //AngularAcceleration = TurnSpeed * Math.Abs(Math.Pow(angleOffset, 2)) * angleOffset * Delta;
+                                    if (shotCooldown <= 0) { Shoot(); }
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -161,26 +310,27 @@ namespace SpaceGame
                     Acceleration += nudge / (float)Mass;
                 }
             }
-            // Nudge towards ships in same unit
-            if (Unit != null)
+
+            if (!isLeader)
             {
-                if (Unit.Units.Count > 2)
+                Vector2 nudge = Unit.Formation.GetLocation(this, Texture.Texture.width * 0.5f);
+                nudge = nudge - Location;
+                if (Selected) { Debug.DrawText("(" + nudge.x + "," + nudge.y + ")", (int)DrawLocation.x, (int)DrawLocation.y, 16); }
+                if (nudge.x != 0 || nudge.y != 0)
                 {
-                    /*for (int i = 0; i < Unit.Units.Count; i++)
-                    {
-                        if (Unit.Units[i] != this)
-                        {
-                            Vector2 nudge = Unit.Units[i].Location - Location;
-                            nudge = (Vector2.Normalize(nudge) * (Velocity.Length() + 0.1f)) * (Vector2.Distance(Unit.Units[i].Location, Location) * 0.00001f);
-                            Acceleration += nudge / (float)Mass;
-                        }
-                    }*/
-                    if (Unit.Location != Location)
-                    {
-                        Vector2 nudge = Unit.Location - Location;
-                        nudge = (Vector2.Normalize(nudge) * (Velocity.Length() + 0.1f)) * (Vector2.Distance(Unit.Location, Location) * 0.00001f);
-                        Acceleration += nudge / (float)Mass;
-                    }
+                    nudge = Vector2.Normalize(nudge) * 0.01f;
+                    Acceleration += nudge / (float)Mass;
+                }
+
+                double angleOffset = leader.Angle - Angle;
+                if (angleOffset > 180) { angleOffset -= 360; }
+                if (angleOffset < -180) { angleOffset += 360; }
+
+                if (angleOffset > 1) { AngularAcceleration = TurnSpeed * Delta; }
+                else if (angleOffset < -1) { AngularAcceleration = -TurnSpeed * Delta; }
+                else
+                {
+                    AngularAcceleration += TurnSpeed * Math.Abs(Math.Pow(angleOffset, 2)) * angleOffset * 0.1f;
                 }
             }
 
@@ -188,6 +338,11 @@ namespace SpaceGame
             if (shotHeat > 0) { shotHeat -= 0.1 * Delta; }
 
             if (Shield > 0 && Shield < MaxShield) { Shield += ShieldRegen; }
+
+            if (tickScript != null)
+            {
+                tickScript.Tick(Delta, this);
+            }
 
             base.Tick(Delta);
         }
@@ -197,7 +352,7 @@ namespace SpaceGame
             if (!Active) { return; }
             if (Selected)
             {
-                if (Behavior == Behaviors.Going)
+                if (Behavior == Behaviors.Going && !(this is SpaceShipHardpoint))
                 {
                     Color col = new Color(128, 128, 128, 16);
                     Raylib.Raylib.DrawLineEx(Location * GameManager.ViewScale + GameManager.ViewOffset,
@@ -234,9 +389,23 @@ namespace SpaceGame
                     Raylib.Raylib.DrawRectangleLines((int)(loc.x - barHalf), (int)(loc.y + barOffset) + barHeight + 1, barWidth, barHeight, Color.DARKPURPLE);
                 }
 
-                if (Stance == Stances.Defend)
+                if (Debug.Enabled && !Debug.ConsoleIsOpen && Raylib.Raylib.IsKeyDown(KeyboardKey.KEY_F2))
                 {
-                    Raylib.Raylib.DrawCircleLines((int)loc.x, (int)loc.y, CombatRange * GameManager.ViewScale, new Color(255, 0, 0, 32));
+                    if (Stance == Stances.Defend)
+                    {
+                        if (Behavior == Behaviors.Idle)
+                        {
+                            Raylib.Raylib.DrawCircleLines((int)loc.x, (int)loc.y, CombatRange * GameManager.ViewScale, new Color(255, 0, 0, 32));
+                        }
+                        else if (Behavior == Behaviors.Going)
+                        {
+                            Raylib.Raylib.DrawCircleLines((int)loc.x, (int)loc.y, MathF.Sqrt(Velocity.Length()) * 0.75f * CombatRange * GameManager.ViewScale, new Color(255, 0, 0, 32));
+                        }
+                        else if (Behavior == Behaviors.Attacking)
+                        {
+                            Raylib.Raylib.DrawCircleLines((int)loc.x, (int)loc.y, CombatRange * GameManager.ViewScale, new Color(255, 0, 0, 32));
+                        }
+                    }
                 }
             }
         }
@@ -402,6 +571,34 @@ namespace SpaceGame
             Result.TurnSpeed = GetXmlValue(obj, "TurnSpeed", baseObject.TurnSpeed);
             Result.RateOfFire = GetXmlValue(obj, "RateOfFire", baseObject.RateOfFire);
             Result.ShieldRebootProbability = (int)GetXmlValue(obj, "ShieldRebootProbability", baseObject.ShieldRebootProbability);
+            Result.Texture = ResourceManager.GetTexture(GetXmlText(obj, "Texture", baseObject.Texture.Name));
+
+            List<SpaceObject> hardpoints = GetXmlNested(obj, "Hardpoints", null);
+            if (hardpoints != null && hardpoints.Count > 0)
+            {
+                Result.Hardpoints = new List<SpaceShipHardpoint>();
+                foreach (SpaceObject o in hardpoints)
+                {
+                    SpaceShipHardpoint hp = o as SpaceShipHardpoint;
+                    if (hp != null)
+                    {
+                        hp.Parent = Result;
+                        hp.Depth += Result.Depth;
+                        hp.Scale *= Result.Scale;
+                        Result.Hardpoints.Add(hp);
+                    }
+                }
+                Debug.WriteLine("Loaded hardpoints");
+            }
+
+            string scriptTick = GetXmlText(obj, "Tick", string.Empty);
+            if (scriptTick != string.Empty)
+            {
+                var watch = System.Diagnostics.Stopwatch.StartNew();
+                Result.tickScript = CSScriptLib.CSScript.Evaluator.LoadMethod(scriptTick);
+                watch.Stop();
+                Debug.WriteLine("Compiled " + Result.XmlSource + " TICK script in " + watch.ElapsedMilliseconds + "ms");
+            }
 
             return Result;
         }
@@ -421,9 +618,9 @@ namespace SpaceGame
                         }
                         catch (Exception e)
                         {
-                            Console.WriteLine("\nXMLParse Error");
-                            Console.WriteLine(e.Message);
-                            Console.WriteLine(attribute.OuterXml);
+                            Debug.WriteLine("\nXMLParse Error");
+                            Debug.WriteLine(e.Message);
+                            Debug.WriteLine(attribute.OuterXml);
                         }
                     }
                 }
@@ -499,6 +696,37 @@ namespace SpaceGame
                     if (node.Name.ToUpperInvariant() == Name.ToUpperInvariant())
                     {
                         return node.InnerText;
+                    }
+                }
+            }
+
+            return Default;
+        }
+
+        private static List<SpaceObject> GetXmlNested(XmlNode Parent, string Name, List<SpaceObject> Default)
+        {
+            if (Parent.HasChildNodes)
+            {
+                XmlNodeList children = Parent.ChildNodes;
+                foreach (XmlNode node in children)
+                {
+                    if (node.Name.ToUpperInvariant() == Name.ToUpperInvariant())
+                    {
+                        List<SpaceObject> result = new List<SpaceObject>();
+                        if (node.ChildNodes.Count > 0)
+                        {
+                            children = node.ChildNodes;
+                            foreach (XmlNode childNode in children)
+                            {
+                                if (childNode.Name.ToUpperInvariant() == "hardpoint".ToUpperInvariant())
+                                {
+                                    SpaceShipHardpoint child = SpaceShipHardpoint.FromXml(new XmlResource() { Xml = new XmlDocument() { InnerXml = childNode.OuterXml } }, null);
+                                    result.Add(child);
+                                }
+                            }
+                        }
+
+                        return result;
                     }
                 }
             }

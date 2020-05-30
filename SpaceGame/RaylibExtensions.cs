@@ -40,7 +40,7 @@ namespace Raylib
 
         public static Vector2 Rotate(this Vector2 vec, float rads)
         {
-            Vector2 result = new Vector2( vec.x * MathF.Cos(rads) - vec.y * MathF.Sin(rads), vec.x * MathF.Sin(rads) + vec.y * MathF.Cos(rads) );
+            Vector2 result = new Vector2(vec.x * MathF.Cos(rads) - vec.y * MathF.Sin(rads), vec.x * MathF.Sin(rads) + vec.y * MathF.Cos(rads));
             return result;
         }
 
@@ -48,7 +48,14 @@ namespace Raylib
         // Things I've found useful
         public static Rectangle ToRectangle(this Vector2 vec)
         {
-            return new Rectangle(0,0,vec.x,vec.y);
+            return new Rectangle(0, 0, vec.x, vec.y);
+        }
+
+        // ============================= Color Extensions ================================
+        // ----------------------------- New ---------------------------------------
+        public static Color SetAlpha(this Color color, byte alpha)
+        {
+            return new Color(color.r, color.g, color.b, alpha);
         }
     }
 }

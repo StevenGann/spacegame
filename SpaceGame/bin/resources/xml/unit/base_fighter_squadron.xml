@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<unit>
+  <image>thumbnail\barb</image>
+  <ships>
+    <spaceship base="ship\test_fighter" />
+    <spaceship base="ship\test_fighter" />
+    <spaceship base="ship\test_fighter" />
+    <spaceship base="ship\test_fighter" />
+    <spaceship base="ship\test_fighter" />
+    <spaceship base="ship\test_fighter" />
+    <spaceship base="ship\test_fighter" />
+    <spaceship base="ship\test_fighter" />
+    <spaceship base="ship\test_fighter" />
+  </ships>
+</unit>
