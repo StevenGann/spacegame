@@ -20,6 +20,21 @@ namespace SpaceGame
         /// </summary>
         public static bool ConsoleIsOpen { get; set; }
 
+        public static string ConsoleBuffer
+        {
+            get
+            {
+                if (instance != null && instance.consoleLines.Count > 0)
+                {
+                    return instance.consoleLines.Peek();
+                }
+                else
+                {
+                    return "";
+                }
+            }
+        }
+
         public static Dictionary<string, Tuple<Func<List<string>, int>, string>> Commands { get; } = new Dictionary<string, Tuple<Func<List<string>, int>, string>>();
         public static Dictionary<string, double> Flags { get; } = new Dictionary<string, double>();
 
@@ -43,6 +58,8 @@ namespace SpaceGame
         private static int terminalCursor = 0;
         private static int blinkCounter = 0;
         private static bool showCursor = true;
+        private static bool echo = true;
+        private static double framerate;
 
         /// <summary>
         /// Default constructor.
@@ -59,7 +76,9 @@ namespace SpaceGame
             Commands.Add("flags", new Tuple<Func<List<string>, int>, string>(CommandFlags, "Lists all debug flags and their values>"));
             Commands.Add("set", new Tuple<Func<List<string>, int>, string>(CommandSet, "Use: \"set <name> <value>\" Sets a debug flag <name> to <value>"));
             Commands.Add("get", new Tuple<Func<List<string>, int>, string>(CommandGet, "Use: \"set <name>\" Prints a debug flag <name>"));
-
+            Commands.Add("batch", new Tuple<Func<List<string>, int>, string>(CommandBatch, "Use: \"batch <filename>\" Executes the specified batch file"));
+            Commands.Add("rem", new Tuple<Func<List<string>, int>, string>(CommandRem, "Use: \"rem <anything>\" Echos to the console"));
+            Commands.Add("echo", new Tuple<Func<List<string>, int>, string>(CommandEcho, "Use: \"echo <value>\" Sets Echo ON/OFF, or 1/0"));
             consoleLines.Push("Console initialized.");
         }
 
@@ -192,6 +211,7 @@ namespace SpaceGame
                 B = (int)Math.Clamp(y1, 1, 1080 - 1),
                 C = (int)Math.Clamp(x2, 1, 1920 - 1),
                 D = (int)Math.Clamp(y2, 1, 1080 - 1),
+                Color = color
             };
             lock (instance.shapeJobs)
             {
@@ -266,7 +286,9 @@ namespace SpaceGame
             }
 
             // ------------------------------------------------------------------------------------
-            Debug.WriteOverlay("FPS: " + Convert.ToString(Raylib.Raylib.GetFPS(), null));
+            framerate += Math.Max(Raylib.Raylib.GetFPS() + 0.5, 0);
+            framerate = Math.Round(framerate / 2);
+            Debug.WriteOverlay("FPS: " + Convert.ToString((int)framerate, null));
 
             Vector2 p = new Vector2();
 
@@ -512,6 +534,30 @@ namespace SpaceGame
             terminalCursor += 1;
         }
 
+        public static void ExecuteBatch(string Filename)
+        {
+            if (instance == null) { instance = new Debug(); }
+            string[] lines = null;
+            try
+            {
+                lines = System.IO.File.ReadAllLines(Filename);
+            }
+            catch
+            {
+                WriteLine("%ERROR%Failed to load batch file " + Filename);
+            }
+            if (lines != null)
+            {
+                for (int i = 0; i < lines.Length; i++)
+                {
+                    if (!string.IsNullOrWhiteSpace(lines[i]))
+                    {
+                        ExecuteString(lines[i]);
+                    }
+                }
+            }
+        }
+
         private static void ExecuteString(string Input)
         {
             try
@@ -601,6 +647,57 @@ namespace SpaceGame
             {
                 WriteLine(name + "\t = " + Flags[name].ToString());
             }
+            return 0;
+        }
+
+        private int CommandEcho(List<string> arg)
+        {
+            if (arg == null || arg.Count != 1) { Debug.WriteLine("%WARNING%Usage: \"echo <on/off or 1/0>\""); return 1; }
+            if (arg[0].Contains("OFF", StringComparison.InvariantCultureIgnoreCase))
+            {
+                echo = false;
+            }
+            else if (arg[0].Contains("ON", StringComparison.InvariantCultureIgnoreCase))
+            {
+                echo = true;
+            }
+            else
+            {
+                try
+                {
+                    echo = int.Parse(arg[0]) >= 1;
+                }
+                catch
+                {
+                    WriteLine("%WARNING% Failed to parse ECHO " + arg[0]);
+                    return 2;
+                }
+            }
+            WriteLine("Echo is " + (echo ? "ON" : "OFF"));
+            return 0;
+        }
+
+        private int CommandRem(List<string> arg)
+        {
+            if (arg != null && echo)
+            {
+                string buffer = "";
+                foreach (string s in arg)
+                {
+                    buffer += s + " ";
+                }
+                WriteLine(buffer.Trim());
+            }
+
+            return 0;
+        }
+
+        private int CommandBatch(List<string> arg)
+        {
+            if (arg == null || arg.Count != 1) { Debug.WriteLine("%WARNING%Usage: \"batch <filename>\""); return 1; }
+
+            ExecuteBatch(arg[0]);
+
             return 0;
         }
 

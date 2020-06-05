@@ -20,6 +20,21 @@ namespace SpaceGame
         public static Dictionary<int, Color> FactionColors = new Dictionary<int, Color>();
         private static float panBoost = 0;
 
+        public static List<string> ScriptBlacklist
+        {
+            get
+            {
+                List<string> newList = new List<string>();
+                foreach (string s in scriptBlacklist)
+                {
+                    newList.Add(s);
+                }
+                return newList;
+            }
+        }
+
+        private static List<string> scriptBlacklist = new List<string>();
+
         private static Queue<SpaceObject> bufferObjects = new Queue<SpaceObject>();
 
         public static void Add(SpaceObject Object)
@@ -203,6 +218,13 @@ namespace SpaceGame
                 Debug.RegisterCommand("list-objects", CommandListObjects, "Lists all SpaceObjects tracked by the GameManager");
                 Debug.RegisterCommand("list-units", CommandListUnits, "Lists all SpaceUnits tracked by the GameManager");
                 Debug.RegisterCommand("spawn-unit", CommandSpawnUnit, "Spawns a unit in the center of the current view");
+
+                scriptBlacklist.Add("IO");
+                scriptBlacklist.Add("Net");
+                scriptBlacklist.Add("unsafe");
+                scriptBlacklist.Add("IntPtr");
+
+                Debug.ExecuteBatch("startup.bat");
             }
         }
 

@@ -39,27 +39,34 @@ namespace SpaceGame
 
         public static void Tick(double Delta)
         {
-            bool inKeepout = InKeepout(Raylib.Raylib.GetMousePosition());
-            //if (inKeepout) { Debug.WriteOverlay("In Keepout"); }
+            bool mousePressed = Raylib.Raylib.IsMouseButtonPressed(MouseButton.MOUSE_LEFT_BUTTON);
+            bool mouseReleased = Raylib.Raylib.IsMouseButtonReleased(MouseButton.MOUSE_LEFT_BUTTON);
+            bool mouseUp = Raylib.Raylib.IsMouseButtonUp(MouseButton.MOUSE_LEFT_BUTTON);
+            bool mouseDown = Raylib.Raylib.IsMouseButtonDown(MouseButton.MOUSE_LEFT_BUTTON);
+            bool rightPressed = Raylib.Raylib.IsMouseButtonPressed(MouseButton.MOUSE_LEFT_BUTTON);
+            bool rightReleased = Raylib.Raylib.IsMouseButtonReleased(MouseButton.MOUSE_LEFT_BUTTON);
+            bool rightUp = Raylib.Raylib.IsMouseButtonUp(MouseButton.MOUSE_LEFT_BUTTON);
+            bool rightDown = Raylib.Raylib.IsMouseButtonDown(MouseButton.MOUSE_LEFT_BUTTON);
+            Vector2 mousePosition = Raylib.Raylib.GetMousePosition();
+            bool inKeepout = InKeepout(mousePosition);
 
-            //Debug.WriteOverlay(MouseState.ToString());
-            if (Raylib.Raylib.IsMouseButtonPressed(MouseButton.MOUSE_LEFT_BUTTON) && MouseState == MouseStates.Idle)
+            if (mousePressed && MouseState == MouseStates.Idle)
             {
-                downLocationScreen = Raylib.Raylib.GetMousePosition();
-                DownLocation = Raylib.Raylib.GetMousePosition() / GameManager.ViewScale - GameManager.ViewOffset / GameManager.ViewScale;
+                downLocationScreen = mousePosition;
+                DownLocation = ScreenToWorld(mousePosition);
             }
             else if (Raylib.Raylib.IsMouseButtonDown(MouseButton.MOUSE_LEFT_BUTTON) && !inKeepout)
             {
-                Vector2 mousePos = Raylib.Raylib.GetMousePosition() / GameManager.ViewScale - GameManager.ViewOffset / GameManager.ViewScale;
+                Vector2 mousePos = ScreenToWorld(mousePosition);
                 if (Raylib.Raylib.Vector2Distance(mousePos, DownLocation) > 64 && !InKeepout(downLocationScreen))
                 {
                     MouseState = MouseStates.Dragging;
                     SelectionRectangle = RecFromVec(DownLocation, mousePos);
                 }
             }
-            else if (Raylib.Raylib.IsMouseButtonReleased(MouseButton.MOUSE_LEFT_BUTTON))
+            else if (mouseReleased)
             {
-                UpLocation = Raylib.Raylib.GetMousePosition() / GameManager.ViewScale - GameManager.ViewOffset / GameManager.ViewScale;
+                UpLocation = ScreenToWorld(mousePosition);
                 if (MouseState == MouseStates.Dragging)
                 {
                     MouseState = MouseStates.DragReleased;
@@ -77,19 +84,19 @@ namespace SpaceGame
                 MouseState = MouseStates.Idle;
             }
 
-            if (Raylib.Raylib.IsMouseButtonReleased(MouseButton.MOUSE_RIGHT_BUTTON) && MouseState == MouseStates.Idle)
+            if (rightReleased && MouseState == MouseStates.Idle)
             {
-                if (Selected.Count != 0)
+                if (SelectedUnits.Count != 0)
                 {
                     IEnumerable<SpaceObject> inSelection = GameManager.Instance.Objects.Where(o =>
                            o is SpaceShip &&
                            o.Active == true &&
-                           Raylib.Raylib.Vector2Distance(o.Location, Raylib.Raylib.GetMousePosition() / GameManager.ViewScale - GameManager.ViewOffset / GameManager.ViewScale) < MathF.Max(o.TextureOffset.x, o.TextureOffset.y)
+                           Raylib.Raylib.Vector2Distance(o.Location, ScreenToWorld(mousePosition)) < MathF.Max(o.TextureOffset.x, o.TextureOffset.y)
                         );
 
                     if (inSelection.Any())
                     {
-                        foreach (SpaceObject obj in Selected)
+                        foreach (SpaceShipUnit unit in SelectedUnits)
                         {
                             SpaceObject target = inSelection.First();
                             foreach (SpaceObject spaceobj in inSelection)
@@ -100,25 +107,32 @@ namespace SpaceGame
                                     break;
                                 }
                             }
-                            (obj as SpaceShip).Objective = target;
-                            (obj as SpaceShip).Behavior = SpaceShip.Behaviors.Attacking;
+                            if (unit.Leader != null)
+                            {
+                                unit.Leader.Objective = target;
+                                unit.Leader.Behavior = SpaceShip.Behaviors.Attacking;
+                            }
                         }
                     }
                     else
                     {
                         int count = 1;
-                        foreach (SpaceObject obj in Selected)
+                        foreach (SpaceShipUnit unit in SelectedUnits)
                         {
-                            (obj as SpaceShip).Objective = null;
-                            //(obj as SpaceShip).Goal = Raylib.Raylib.GetMousePosition();
-                            Vector2 mouse = Raylib.Raylib.GetMousePosition() / GameManager.ViewScale - GameManager.ViewOffset / GameManager.ViewScale;
-                            (obj as SpaceShip).Goal = new Vector2(mouse.x + RNG.Next(count) - RNG.Next(count), mouse.y + RNG.Next(count) - RNG.Next(count));
-                            (obj as SpaceShip).Behavior = SpaceShip.Behaviors.Going;
-                            count += 5;
+                            if (unit.Leader != null)
+                            {
+                                unit.Leader.Objective = null;
+                                //(obj as SpaceShip).Goal = Raylib.Raylib.GetMousePosition();
+                                Vector2 mouse = ScreenToWorld(mousePosition);
+                                unit.Leader.Goal = mouse;
+                                unit.Leader.Behavior = SpaceShip.Behaviors.Going;
+                                count += 5;
+                            }
                         }
                     }
                 }
             }
+
             Raylib.Raylib.BeginTextureMode(MinimapTexture);
             Texture2D bkgTex = ResourceManager.GetTexture(@"_menu\haze+").Texture;
             Raylib.Raylib.DrawTexturePro(bkgTex, new Rectangle(0, 0, bkgTex.width, bkgTex.height), new Rectangle(0, 0, MinimapSize, MinimapSize), Vector2.Zero, 0.0f, Color.WHITE);

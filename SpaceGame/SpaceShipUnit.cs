@@ -12,6 +12,15 @@ namespace SpaceGame
         public TextureResource UiImage { get; set; } = ResourceManager.GetTexture(@"thumbnail\unknown");
         public Formation Formation = null;
 
+        public SpaceShip Leader
+        {
+            get
+            {
+                if (Units.Count > 0) { return Units[0]; }
+                else { return null; }
+            }
+        }
+
         public bool Selected
         {
             set

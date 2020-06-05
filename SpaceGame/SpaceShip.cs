@@ -33,20 +33,28 @@ namespace SpaceGame
         private double shotCooldown = 0.0;
         private double shotHeat = 0.0;
         private Vector2 attackOffset = new Vector2();
-        private dynamic tickScript = null;
         private bool isLeader = true;
         private SpaceShip leader = null;
 
         public override void Tick(double Delta)
         {
             if (!Active) { return; }
-            isLeader = Unit == null || Unit.Formation == null || this == Unit.Units[0];
+            isLeader = Unit == null || Unit.Formation == null || this == Unit.Leader;
 
             if (!isLeader)
             {
-                leader = Unit.Units[0];
-                Behavior = leader.Behavior;
+                leader = Unit.Leader;
                 Stance = leader.Stance;
+                Objective = leader.Objective;
+
+                if (leader.Behavior == Behaviors.Attacking)
+                {
+                    Behavior = leader.Behavior;
+                }
+                else if (Behavior == Behaviors.Attacking && leader.Behavior != Behaviors.Attacking)
+                {
+                    Behavior = Behaviors.Going;
+                }
             }
 
             if (isLeader)
@@ -197,44 +205,13 @@ namespace SpaceGame
             }
             else
             {
-                if (Behavior == Behaviors.Attacking)
+                Vector2 goal = Unit.Formation.GetLocation(this, Texture.Texture.width * 0.5f);
+                Vector2 screenGoal = UiManager.WorldToScreen(goal);
+                Vector2 screenLocation = UiManager.WorldToScreen(Location);
+                Debug.DrawLine((int)screenGoal.x, (int)screenGoal.y, (int)screenLocation.x, (int)screenLocation.y, Color.WHITE);
+
+                if (Vector2.Distance(Location, goal) > Texture.Texture.width)
                 {
-                    if (Objective == this || Objective.Active == false) { Behavior = Behaviors.Idle; }
-
-                    float distance = Raylib.Raylib.Vector2Distance(Objective.Location, Location);
-                    if (RNG.Next(100) <= 200 / distance) { attackOffset = new Vector2(RNG.Next((int)(distance / 50)) - RNG.Next((int)(distance / 50)), RNG.Next((int)(distance / 50)) - RNG.Next((int)(distance / 50))); }
-
-                    if (Objective is SpaceShip)
-                    {
-                        Goal = (Objective as SpaceShip).GetLead(1 + distance / 50) + attackOffset;
-                    }
-                    else
-                    {
-                        Goal = Objective.Location + attackOffset;
-                    }
-
-                    double angleOffset = (AngleToPoint(this.Location, Goal) - Angle) + 90;
-                    if (angleOffset > 180) { angleOffset -= 360; }
-                    if (angleOffset < -180) { angleOffset += 360; }
-
-                    if (angleOffset > 1) { AngularAcceleration = TurnSpeed * Delta; }
-                    else if (angleOffset < -1) { AngularAcceleration = -TurnSpeed * Delta; }
-                    else
-                    {
-                        AngularAcceleration = TurnSpeed * Math.Abs(Math.Pow(angleOffset, 2)) * angleOffset * Delta;
-                        if (shotCooldown <= 0 && distance < CombatRange) { Shoot(); }
-                    }
-
-                    Throttle = Math.Pow(Math.Clamp((180 - angleOffset) / 180, 0.0, 1.0), 2);
-                }
-                else if (Behavior == Behaviors.Idle || Behavior == Behaviors.Going)
-                {
-                    Vector2 goal = Goal;
-                    if (Unit != null && Unit.Formation != null && this != Unit.Units[0])
-                    {
-                        goal = Unit.Formation.GetLocation(this, Texture.Texture.width * 0.5f);
-                    }
-                    Vector2 nudge = Unit.Formation.GetLocation(this, Texture.Texture.width * 0.5f);
                     double angleOffset = (AngleToPoint(this.Location, goal) - Angle) + 90;
                     if (angleOffset > 180) { angleOffset -= 360; }
                     if (angleOffset < -180) { angleOffset += 360; }
@@ -260,36 +237,11 @@ namespace SpaceGame
                         }
                     }
 
-                    if (Stance == Stances.Defend)
-                    {
-                        if (CombatRange <= 0) { CombatRange = MathF.Min(Texture.Texture.width, Texture.Texture.height) * 10; }
-
-                        if (Hardpoints == null) // If I've got hardpoints, let them deal with it.
-                        {
-                            SpaceObject[] nearTargets = GetTargets(Location, MathF.Sqrt(Velocity.Length()) * 0.75f * CombatRange);
-                            if (nearTargets.Length > 0)
-                            {
-                                if (RandomOffset >= nearTargets.Length || RandomOffset < 0 || RNG.NextDouble() < 0.001)
-                                {
-                                    RandomOffset = RandomOffset = (int)Math.Floor(RNG.NextDouble() * nearTargets.Length);
-                                }
-
-                                float distance = Raylib.Raylib.Vector2Distance(nearTargets[RandomOffset].Location, Location);
-                                if (RNG.Next(100) <= 200 / distance) { attackOffset = new Vector2(RNG.Next((int)(distance / 50)) - RNG.Next((int)(distance / 50)), RNG.Next((int)(distance / 50)) - RNG.Next((int)(distance / 50))); }
-                                Vector2 incidentalGoal = (nearTargets[RandomOffset] as SpaceShip).GetLead(1 + distance / 50) + attackOffset;
-
-                                angleOffset = (AngleToPoint(this.Location, incidentalGoal) - Angle) + 90;
-                                if (angleOffset > 180) { angleOffset -= 360; }
-                                if (angleOffset < -180) { angleOffset += 360; }
-
-                                if (Math.Abs(angleOffset) < 5)
-                                {
-                                    //AngularAcceleration = TurnSpeed * Math.Abs(Math.Pow(angleOffset, 2)) * angleOffset * Delta;
-                                    if (shotCooldown <= 0) { Shoot(); }
-                                }
-                            }
-                        }
-                    }
+                    Throttle = Throttle * 0.1;
+                }
+                else
+                {
+                    Throttle = 0;
                 }
             }
 
@@ -299,7 +251,7 @@ namespace SpaceGame
             Acceleration = thrust * (float)Delta / (float)Mass;
 
             // Nudge away from other ships
-            SpaceObject[] neighbors = GetNeighbors(Location, Texture.Texture.width + (Velocity.Length() / 2));
+            /*SpaceObject[] neighbors = GetNeighbors(Location, Texture.Texture.width);
             if (neighbors.Length > 0)
             {
                 for (int i = 0; i < neighbors.Length; i++)
@@ -309,28 +261,30 @@ namespace SpaceGame
                     //nudge += new Vector2((float)RNG.NextDouble(), (float)RNG.NextDouble()) / (Vector2.Distance(neighbors[i].Location, Location) + 0.1f) ;
                     Acceleration += nudge / (float)Mass;
                 }
-            }
+            }*/
 
             if (!isLeader)
             {
                 Vector2 nudge = Unit.Formation.GetLocation(this, Texture.Texture.width * 0.5f);
                 nudge = nudge - Location;
-                if (Selected) { Debug.DrawText("(" + nudge.x + "," + nudge.y + ")", (int)DrawLocation.x, (int)DrawLocation.y, 16); }
                 if (nudge.x != 0 || nudge.y != 0)
                 {
+                    if (nudge.Length() < Texture.Texture.width)
+                    {
+                        double angleOffset = leader.Angle - Angle;
+                        if (angleOffset > 180) { angleOffset -= 360; }
+                        if (angleOffset < -180) { angleOffset += 360; }
+
+                        if (angleOffset > 1) { AngularAcceleration = TurnSpeed * Delta; }
+                        else if (angleOffset < -1) { AngularAcceleration = -TurnSpeed * Delta; }
+                        else
+                        {
+                            AngularAcceleration += TurnSpeed * Math.Pow(angleOffset, 5) * 0.1f;
+                        }
+                    }
+
                     nudge = Vector2.Normalize(nudge) * 0.01f;
                     Acceleration += nudge / (float)Mass;
-                }
-
-                double angleOffset = leader.Angle - Angle;
-                if (angleOffset > 180) { angleOffset -= 360; }
-                if (angleOffset < -180) { angleOffset += 360; }
-
-                if (angleOffset > 1) { AngularAcceleration = TurnSpeed * Delta; }
-                else if (angleOffset < -1) { AngularAcceleration = -TurnSpeed * Delta; }
-                else
-                {
-                    AngularAcceleration += TurnSpeed * Math.Abs(Math.Pow(angleOffset, 2)) * angleOffset * 0.1f;
                 }
             }
 
@@ -338,11 +292,6 @@ namespace SpaceGame
             if (shotHeat > 0) { shotHeat -= 0.1 * Delta; }
 
             if (Shield > 0 && Shield < MaxShield) { Shield += ShieldRegen; }
-
-            if (tickScript != null)
-            {
-                tickScript.Tick(Delta, this);
-            }
 
             base.Tick(Delta);
         }
@@ -368,9 +317,15 @@ namespace SpaceGame
                 }
             }
 
+            Vector2 loc = DrawLocation;
+
+            if (Unit != null && this == Unit.Leader)
+            {
+                Raylib.Raylib.DrawCircle((int)loc.x, (int)loc.y, Texture.Texture.width * Scale, new Color(255, 0, 0, 128));
+            }
+
             base.Draw();
 
-            Vector2 loc = DrawLocation;
             if (Active)
             {
                 int barWidth = (int)(Math.Sqrt(Texture.Texture.width * Scale) * 5);
@@ -433,7 +388,7 @@ namespace SpaceGame
             }
         }
 
-        private void Destroy()
+        public override void Destroy()
         {
             if (Hardpoints != null)
             {
@@ -447,7 +402,8 @@ namespace SpaceGame
             o.Location = Location;
             o.Velocity = Velocity;
             GameManager.Add(o);
-            Active = false;
+
+            base.Destroy();
         }
 
         public void Shoot()
@@ -589,15 +545,6 @@ namespace SpaceGame
                     }
                 }
                 Debug.WriteLine("Loaded hardpoints");
-            }
-
-            string scriptTick = GetXmlText(obj, "Tick", string.Empty);
-            if (scriptTick != string.Empty)
-            {
-                var watch = System.Diagnostics.Stopwatch.StartNew();
-                Result.tickScript = CSScriptLib.CSScript.Evaluator.LoadMethod(scriptTick);
-                watch.Stop();
-                Debug.WriteLine("Compiled " + Result.XmlSource + " TICK script in " + watch.ElapsedMilliseconds + "ms");
             }
 
             return Result;

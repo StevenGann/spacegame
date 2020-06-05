@@ -25,6 +25,11 @@ namespace SpaceGame
         public int Faction { get; set; } = 0;
         public Hitbox Hitbox { get; set; } = null;
         public string XmlSource { get; set; } = string.Empty;
+        public dynamic tickScript;
+        public dynamic drawScript;
+        public dynamic spawnScript;
+        public dynamic destroyScript;
+        private bool initialized = false;
 
         public bool Selected
         {
@@ -62,12 +67,27 @@ namespace SpaceGame
         public virtual void Tick(double Delta)
         {
             if (!Active) { return; }
+
+            if (!initialized)
+            {
+                if (spawnScript != null)
+                {
+                    spawnScript.Spawn(this);
+                }
+                initialized = true;
+            }
+
             Velocity += Acceleration * (float)Delta;
             Location += Velocity * (float)Delta;
             Velocity *= (float)(1.0 - (Drag * Delta / Mass));
             AngularVelocity += AngularAcceleration * Delta;
             Angle += AngularVelocity * Delta;
             AngularVelocity *= (1.0 - (AngularDrag * Delta));
+
+            if (tickScript != null)
+            {
+                tickScript.Tick(Delta, this);
+            }
         }
 
         public virtual void Draw()
@@ -93,9 +113,33 @@ namespace SpaceGame
             }
 
             //Raylib.Raylib.DrawTextureEx(Texture.Texture, RotateAroundPoint(Location - TextureOffset, Location, Angle), (float)Angle, 1.0f, Color.WHITE);
-            Raylib.Raylib.DrawTexturePro(Texture.Texture, new Rectangle(0, 0, Texture.Texture.width, Texture.Texture.height), new Rectangle(loc.x, loc.y, Texture.Texture.width * Scale * GameManager.ViewScale, Texture.Texture.height * Scale * GameManager.ViewScale), TextureOffset * Scale * GameManager.ViewScale, (float)Angle, Color.WHITE);
+            Raylib.Raylib.DrawTexturePro(
+                Texture.Texture,
+                new Rectangle(0, 0, Texture.Texture.width, Texture.Texture.height),
+                new Rectangle(
+                    loc.x,
+                    loc.y,
+                    Texture.Texture.width * Scale * GameManager.ViewScale,
+                    Texture.Texture.height * Scale * GameManager.ViewScale),
+                TextureOffset * Scale * GameManager.ViewScale,
+                (float)Angle,
+                Color.WHITE);
+
+            if (drawScript != null)
+            {
+                drawScript.Draw(this);
+            }
 
             if (Hitbox != null && Debug.Enabled && !Debug.ConsoleIsOpen && Raylib.Raylib.IsKeyDown(KeyboardKey.KEY_F3)) { Hitbox.Draw(loc, (float)(Angle * 0.0174533), GameManager.ViewScale * Scale); }
+        }
+
+        public virtual void Destroy()
+        {
+            Active = false;
+            if (destroyScript != null)
+            {
+                destroyScript.Destroy(this);
+            }
         }
 
         public static SpaceObject FromXml(XmlResource Xml, SpaceObject DstObject)
@@ -138,6 +182,12 @@ namespace SpaceGame
                 Result.Texture = ResourceManager.GetTexture(@"ui\error");
                 Result.Scale = 1;
             }
+
+            Result.tickScript = GetXmlScript(obj, "Tick", baseObject.tickScript);
+            Result.drawScript = GetXmlScript(obj, "Draw", baseObject.drawScript);
+            Result.spawnScript = GetXmlScript(obj, "Spawn", baseObject.spawnScript);
+            Result.destroyScript = GetXmlScript(obj, "Destroy", baseObject.destroyScript);
+
             return Result;
         }
 
@@ -163,6 +213,58 @@ namespace SpaceGame
             {
                 return false;
             }
+        }
+
+        public static dynamic GetXmlScript(XmlNode Parent, string Name, dynamic Default)
+        {
+            if (Parent.HasChildNodes)
+            {
+                XmlNodeList children = Parent.ChildNodes;
+                foreach (XmlNode node in children)
+                {
+                    if (node.Name.ToUpperInvariant() == Name.ToUpperInvariant() && node.Attributes.Count > 0)
+                    {
+                        XmlAttributeCollection attributes = node.Attributes;
+                        foreach (XmlAttribute attribute in attributes)
+                        {
+                            if (attribute.Name.ToUpperInvariant() == "source".ToUpperInvariant())
+                            {
+                                ScriptResource script = ResourceManager.GetScript(attribute.Value);
+                                script.Loaded = true;
+                                return script.Script;
+                            }
+                        }
+                    }
+                }
+            }
+
+            string scriptText = GetXmlText(Parent, Name, string.Empty);
+            if (scriptText != string.Empty)
+            {
+                var watch = System.Diagnostics.Stopwatch.StartNew();
+
+                if (Debug.GetFlag("DangerousScripts") != 1)
+                {
+                    List<string> blacklist = GameManager.ScriptBlacklist;
+                    foreach (string s in blacklist)
+                    {
+                        if (scriptText.Contains(s))
+                        {
+                            watch.Stop();
+                            Debug.WriteLine("%WARNING%Did not compile script because it contained \"" + s + "\" and DangerousScripts cvar is disabled.");
+                            Debug.WriteLine("%WARNING%If you trust this script, use \"SET DANGEROUSSCRIPTS 1\" in the console or config file.");
+                            return Default;
+                        }
+                    }
+                }
+
+                dynamic result = CSScriptLib.CSScript.Evaluator.LoadMethod(scriptText);
+                watch.Stop();
+                Debug.WriteLine("%SUCCESS%Compiled script in " + watch.ElapsedMilliseconds + "ms");
+                return result;
+            }
+
+            return Default;
         }
 
         private static double GetXmlValue(XmlNode Parent, string Name, double Default)
