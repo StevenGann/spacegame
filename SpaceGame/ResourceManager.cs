@@ -222,15 +222,14 @@ namespace SpaceGame
 
         public static void Cull()
         {
-            Random RNG = new Random();
-            foreach (KeyValuePair<string, TextureResource> kvp in Instance.Textures)
+            /*foreach (KeyValuePair<string, TextureResource> kvp in Instance.Textures)
             {
                 if (kvp.Value.Loaded && kvp.Value.Users <= 0)
                 {
                     Debug.WriteLine("Unloading " + kvp.Value.Name);
                     kvp.Value.Loaded = false;
                 }
-            }
+            }*/
         }
     }
 

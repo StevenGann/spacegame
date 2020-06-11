@@ -13,7 +13,6 @@ C:\Users\cadik\Documents\GitHub\spacegame\SpaceGame\obj\Debug\netcoreapp3.1\Spac
 C:\Users\cadik\Documents\GitHub\spacegame\SpaceGame\obj\Debug\netcoreapp3.1\SpaceGame.dll
 C:\Users\cadik\Documents\GitHub\spacegame\SpaceGame\obj\Debug\netcoreapp3.1\SpaceGame.pdb
 C:\Users\cadik\Documents\GitHub\spacegame\SpaceGame\obj\Debug\netcoreapp3.1\SpaceGame.genruntimeconfig.cache
-C:\Users\cadik\Documents\GitHub\spacegame\SpaceGame\obj\Debug\netcoreapp3.1\SpaceGame.csprojAssemblyReference.cache
 C:\Users\cadik\Documents\GitHub\spacegame\SpaceGame\bin\Debug\netcoreapp3.1\CSScriptLib.dll
 C:\Users\cadik\Documents\GitHub\spacegame\SpaceGame\bin\Debug\netcoreapp3.1\Microsoft.CodeAnalysis.dll
 C:\Users\cadik\Documents\GitHub\spacegame\SpaceGame\bin\Debug\netcoreapp3.1\Microsoft.CodeAnalysis.CSharp.dll
@@ -74,3 +73,6 @@ C:\Users\cadik\Documents\GitHub\spacegame\SpaceGame\bin\Debug\netcoreapp3.1\tr\M
 C:\Users\cadik\Documents\GitHub\spacegame\SpaceGame\bin\Debug\netcoreapp3.1\zh-Hans\Microsoft.CodeAnalysis.Scripting.resources.dll
 C:\Users\cadik\Documents\GitHub\spacegame\SpaceGame\bin\Debug\netcoreapp3.1\zh-Hant\Microsoft.CodeAnalysis.Scripting.resources.dll
 C:\Users\cadik\Documents\GitHub\spacegame\SpaceGame\obj\Debug\netcoreapp3.1\SpaceGame.csproj.CoreCompileInputs.cache
+C:\Users\cadik\Documents\GitHub\spacegame\SpaceGame\bin\Debug\netcoreapp3.1\NStack.dll
+C:\Users\cadik\Documents\GitHub\spacegame\SpaceGame\bin\Debug\netcoreapp3.1\Terminal.Gui.dll
+C:\Users\cadik\Documents\GitHub\spacegame\SpaceGame\obj\Debug\netcoreapp3.1\SpaceGame.csprojAssemblyReference.cache

@@ -39,6 +39,7 @@ namespace SpaceGame
         public override void Tick(double Delta)
         {
             if (!Active) { return; }
+
             isLeader = Unit == null || Unit.Formation == null || this == Unit.Leader;
 
             if (!isLeader)
@@ -46,18 +47,10 @@ namespace SpaceGame
                 leader = Unit.Leader;
                 Stance = leader.Stance;
                 Objective = leader.Objective;
-
-                if (leader.Behavior == Behaviors.Attacking)
-                {
-                    Behavior = leader.Behavior;
-                }
-                else if (Behavior == Behaviors.Attacking && leader.Behavior != Behaviors.Attacking)
-                {
-                    Behavior = Behaviors.Going;
-                }
+                Behavior = leader.Behavior;
             }
 
-            if (isLeader)
+            if (isLeader || Behavior == Behaviors.Attacking)
             {
                 if (Behavior == Behaviors.Idle)
                 {
@@ -141,11 +134,11 @@ namespace SpaceGame
                 else if (Behavior == Behaviors.Going)
                 {
                     Vector2 goal = Goal;
-                    if (Unit != null && Unit.Formation != null && this != Unit.Units[0])
+                    /*if (Unit != null && Unit.Formation != null && this != Unit.Units[0])
                     {
                         goal = Unit.Formation.GetLocation(this, Texture.Texture.width * 0.5f);
-                    }
-                    Vector2 nudge = Unit.Formation.GetLocation(this, Texture.Texture.width * 0.5f);
+                    }*/
+
                     double angleOffset = (AngleToPoint(this.Location, goal) - Angle) + 90;
                     if (angleOffset > 180) { angleOffset -= 360; }
                     if (angleOffset < -180) { angleOffset += 360; }
@@ -208,7 +201,7 @@ namespace SpaceGame
                 Vector2 goal = Unit.Formation.GetLocation(this, Texture.Texture.width * 0.5f);
                 Vector2 screenGoal = UiManager.WorldToScreen(goal);
                 Vector2 screenLocation = UiManager.WorldToScreen(Location);
-                Debug.DrawLine((int)screenGoal.x, (int)screenGoal.y, (int)screenLocation.x, (int)screenLocation.y, Color.WHITE);
+                Debug.DrawLine((int)screenGoal.x, (int)screenGoal.y, (int)screenLocation.x, (int)screenLocation.y, new Color(255, 255, 255, 64));
 
                 if (Vector2.Distance(Location, goal) > Texture.Texture.width)
                 {
@@ -227,17 +220,11 @@ namespace SpaceGame
 
                     if (Raylib.Raylib.Vector2Distance(Location, goal) < Velocity.Length() * 60 * 10)
                     {
-                        if (Raylib.Raylib.Vector2Distance(Location, goal) < Texture.Texture.height)
-                        {
-                            Behavior = Behaviors.Idle;
-                        }
-                        else
-                        {
-                            Throttle *= (Raylib.Raylib.Vector2Distance(Location, goal) / ((Velocity.Length() * 120) + 1)) * 0.75;
-                        }
+                        Throttle *= (Raylib.Raylib.Vector2Distance(Location, goal) / ((Velocity.Length() * 120) + 1)) * 0.75;
                     }
 
-                    Throttle = Throttle * 0.1;
+                    if (Behavior == Behaviors.Idle)
+                    { Throttle = Throttle * 0.1; }
                 }
                 else
                 {
@@ -282,9 +269,19 @@ namespace SpaceGame
                             AngularAcceleration += TurnSpeed * Math.Pow(angleOffset, 5) * 0.1f;
                         }
                     }
-
-                    nudge = Vector2.Normalize(nudge) * 0.01f;
-                    Acceleration += nudge / (float)Mass;
+                    if (Behavior == Behaviors.Idle)
+                    {
+                        nudge = Vector2.Normalize(nudge) * 0.01f;
+                    }
+                    else if (Behavior == Behaviors.Going)
+                    {
+                        nudge = Vector2.Normalize(nudge) * MathF.Pow(nudge.Length(), 2) * 0.001f;
+                    }
+                    else if (Behavior == Behaviors.Attacking)
+                    {
+                        nudge = Vector2.Normalize(nudge) * MathF.Pow(nudge.Length(), 2) * 0.00001f;
+                    }
+                    Velocity += (nudge * 1f) / (float)Mass;
                 }
             }
 
@@ -299,6 +296,7 @@ namespace SpaceGame
         public override void Draw()
         {
             if (!Active) { return; }
+
             if (Selected)
             {
                 if (Behavior == Behaviors.Going && !(this is SpaceShipHardpoint))
@@ -321,7 +319,7 @@ namespace SpaceGame
 
             if (Unit != null && this == Unit.Leader)
             {
-                Raylib.Raylib.DrawCircle((int)loc.x, (int)loc.y, Texture.Texture.width * Scale, new Color(255, 0, 0, 128));
+                Raylib.Raylib.DrawCircle((int)loc.x, (int)loc.y, Texture.Texture.width * Scale * 0.25f, new Color(255, 0, 0, 128));
             }
 
             base.Draw();
@@ -430,6 +428,11 @@ namespace SpaceGame
 
             shotCooldown = 60 / RateOfFire;
             shotHeat += 1;
+
+            if (Hitbox == null && RNG.Next(100) < 10)
+            {
+                Hitbox = Hitbox.Automatic(Texture, (int)Math.Max(2, Scale * Texture.Texture.height / 8));
+            }
         }
 
         private static double AngleToPoint(Vector2 A, Vector2 B)
@@ -528,6 +531,7 @@ namespace SpaceGame
             Result.RateOfFire = GetXmlValue(obj, "RateOfFire", baseObject.RateOfFire);
             Result.ShieldRebootProbability = (int)GetXmlValue(obj, "ShieldRebootProbability", baseObject.ShieldRebootProbability);
             Result.Texture = ResourceManager.GetTexture(GetXmlText(obj, "Texture", baseObject.Texture.Name));
+            //Result.Hitbox = Hitbox.Automatic(Result.Texture, (int)Math.Max(2, Result.Scale * Result.Texture.Texture.height / 8));
 
             List<SpaceObject> hardpoints = GetXmlNested(obj, "Hardpoints", null);
             if (hardpoints != null && hardpoints.Count > 0)

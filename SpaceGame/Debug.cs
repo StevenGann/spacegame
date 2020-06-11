@@ -6,6 +6,17 @@ using System.Text;
 using System.Text.RegularExpressions;
 using static Raylib.Raylib;
 
+using NStack;
+using System.Diagnostics;
+using System.Globalization;
+using System.IO;
+using System.Reflection;
+using System.Threading;
+using Terminal.Gui;
+using Color = Raylib.Color;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+using SpaceGame;
+
 namespace SpaceGame
 {
     public class Debug
@@ -44,6 +55,7 @@ namespace SpaceGame
         private Queue<string> overlayLines = new Queue<string>();
         private Stack<string> consoleLines = new Stack<string>();
         private Stack<string> consoleLinesBuffer = new Stack<string>();
+        private static int consoleLinesOffset;
         private int consoleMaxLines = 64;
         private int consoleFontSize = 16;
         private Font font;
@@ -80,6 +92,8 @@ namespace SpaceGame
             Commands.Add("rem", new Tuple<Func<List<string>, int>, string>(CommandRem, "Use: \"rem <anything>\" Echos to the console"));
             Commands.Add("echo", new Tuple<Func<List<string>, int>, string>(CommandEcho, "Use: \"echo <value>\" Sets Echo ON/OFF, or 1/0"));
             consoleLines.Push("Console initialized.");
+
+            //ConsoleUi.Start();
         }
 
         public static void RegisterCommand(string Name, Func<List<string>, int> Function, string Help)
@@ -246,6 +260,8 @@ namespace SpaceGame
         {
             if (instance == null) { instance = new Debug(); }
 
+            //ConsoleUi.Tick();
+
             if (IsKeyPressed(KeyboardKey.KEY_F1))
             {
                 if (Enabled)
@@ -327,36 +343,39 @@ namespace SpaceGame
                     {
                         string line = instance.consoleLines.Pop();
                         string originalLine = line;
-                        string tag = "";
-                        if (line.StartsWith("%", StringComparison.Ordinal))
+                        if (i >= consoleLinesOffset)
                         {
-                            string[] tokens = line.Split('%');
-                            if (tokens.Length > 2)
+                            string tag = "";
+                            if (line.StartsWith("%", StringComparison.Ordinal))
                             {
-                                line = "";
-                                for (int j = 2; j < tokens.Length; j++)
+                                string[] tokens = line.Split('%');
+                                if (tokens.Length > 2)
                                 {
-                                    line += ((j > 2) ? "%" : "") + tokens[j];
+                                    line = "";
+                                    for (int j = 2; j < tokens.Length; j++)
+                                    {
+                                        line += ((j > 2) ? "%" : "") + tokens[j];
+                                    }
+
+                                    tag = tokens[1].ToUpper(System.Globalization.CultureInfo.InvariantCulture);
                                 }
-
-                                tag = tokens[1].ToUpper(System.Globalization.CultureInfo.InvariantCulture);
                             }
-                        }
 
-                        if (p.y > -instance.consoleFontSize)
-                        {
-                            if (!string.IsNullOrEmpty(tag))
+                            if (p.y > -instance.consoleFontSize)
                             {
-                                Color c = instance.backgroundColorAlt;
-                                if (tag == "SUCCESS") { c = new Color(0, 255, 0, 64); }
-                                else if (tag == "WARNING") { c = new Color(255, 255, 0, 64); }
-                                else if (tag == "ERROR") { c = new Color(255, 0, 0, 64); }
-                                DrawRectangle((int)p.x - 2, (int)p.y + 1, GetScreenWidth() - 2, instance.consoleFontSize - 1, c);
+                                if (!string.IsNullOrEmpty(tag))
+                                {
+                                    Color c = instance.backgroundColorAlt;
+                                    if (tag == "SUCCESS") { c = new Color(0, 255, 0, 64); }
+                                    else if (tag == "WARNING") { c = new Color(255, 255, 0, 64); }
+                                    else if (tag == "ERROR") { c = new Color(255, 0, 0, 64); }
+                                    DrawRectangle((int)p.x - 2, (int)p.y + 1, GetScreenWidth() - 2, instance.consoleFontSize - 1, c);
+                                }
+                                DrawTextEx(instance.font, line, p, instance.consoleFontSize, 1.0f, instance.foregroundColor);
                             }
-                            DrawTextEx(instance.font, line, p, instance.consoleFontSize, 1.0f, instance.foregroundColor);
-                        }
 
-                        p.y -= instance.consoleFontSize;
+                            p.y -= instance.consoleFontSize;
+                        }
                         instance.consoleLinesBuffer.Push(originalLine);
                     }
                     instance.consoleLines.Clear();
@@ -500,6 +519,16 @@ namespace SpaceGame
                 }
                 terminalCursor = 0;
                 terminalBuffer = "";
+            }
+            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_PAGE_UP))
+            {
+                consoleLinesOffset += 8;
+                if (consoleLinesOffset > instance.consoleMaxLines - 1) { consoleLinesOffset = instance.consoleMaxLines - 1; }
+            }
+            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_PAGE_DOWN))
+            {
+                consoleLinesOffset -= 8;
+                if (consoleLinesOffset < 0) { consoleLinesOffset = 0; }
             }
 
             blinkCounter++;
@@ -724,6 +753,92 @@ namespace SpaceGame
             Line,
             Circle,
             Rectangle
+        }
+    }
+}
+
+public static class ConsoleUi
+{
+    private static Window leftPane;
+    private static Window rightPane;
+    private static SpaceShipUnit selectedUnit;
+    private static SpaceShip selectedShip;
+
+    public static void Start()
+    {
+        System.ComponentModel.BackgroundWorker debugWorker = new System.ComponentModel.BackgroundWorker();
+        debugWorker.DoWork += DebugWorker_DoWork;
+        debugWorker.RunWorkerAsync();
+    }
+
+    private static void DebugWorker_DoWork(object sender, System.ComponentModel.DoWorkEventArgs e)
+    {
+        ConsoleUi.Run();
+    }
+
+    public static void Run()
+    {
+        Application.Init();
+        var top = Application.Top;
+
+        // Creates the top-level window to show
+        var win = new Window("SpaceGame Debugger")
+        {
+            X = 1,
+            Y = 0, // Leave one row for the toplevel menu
+
+            // By using Dim.Fill(), it will automatically resize without manual intervention
+            Width = Dim.Fill(1),
+            Height = Dim.Fill(1)
+        };
+        top.Add(win);
+
+        leftPane = new Window("Unit")
+        {
+            X = 0,
+            Y = 0,
+            Width = 32,
+            Height = Dim.Fill(0)
+        };
+
+        rightPane = new Window("Ship")
+        {
+            X = 32,
+            Y = 0,
+            Width = Dim.Fill(0),
+            Height = Dim.Fill(0)
+        };
+
+        win.Add(leftPane);
+        win.Add(rightPane);
+
+        Application.Run();
+    }
+
+    private static RadioGroup shipSelector;
+
+    public static void Tick()
+    {
+        if (UiManager.SelectedUnits.Count > 0)
+        {
+            if (UiManager.SelectedUnits[0] != selectedUnit)
+            {
+                selectedUnit = UiManager.SelectedUnits[0];
+
+                leftPane.Clear();
+                string[] labels = new string[selectedUnit.Units.Count];
+                for (int i = 0; i < selectedUnit.Units.Count; i++)
+                {
+                    //leftPane.Add(new Label(new Rect(0, i, 16, 1), selected.Units[i].Texture.Name));
+                    labels[i] = selectedUnit.Units[i].Texture.Name;
+                }
+                shipSelector = new RadioGroup(0, 0, labels, 0);
+                leftPane.Add(shipSelector);
+            }
+        }
+        else
+        {
+            leftPane.Clear();
         }
     }
 }

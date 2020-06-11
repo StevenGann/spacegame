@@ -93,14 +93,14 @@ namespace SpaceGame
             SetConfigFlags(ConfigFlag.FLAG_VSYNC_HINT | ConfigFlag.FLAG_MSAA_4X_HINT | ((Debug.GetFlag("Fullscreen") == 1) ? (ConfigFlag.FLAG_FULLSCREEN_MODE) : 0));
             UiManager.Instantiate();
 
-            for (int j = 0; j < 1; j++)
+            for (int j = 0; j < 8; j++)
             {
                 SpaceShipUnit unitEnemy = SpaceShipUnit.FromXml(ResourceManager.GetXml(@"unit\base_fighter_squadron"), null);
                 unitEnemy.Location = new Vector2(900, 900 - (j * 60));
                 unitEnemy.Formation = new Formation();
                 GameManager.Add(unitEnemy);
             }
-            /*
+
             SpaceShip objPlayer = SpaceShip.FromXml(ResourceManager.GetXml(@"ship\base_cruiser"), null);
             objPlayer.Faction = 1;
             objPlayer.Location = new Vector2(1000, 300);
@@ -123,7 +123,6 @@ namespace SpaceGame
                 Shield = 1000
             };
             GameManager.Add(station);
-            */
 
             double TargetFps = 60;
             SetTargetFPS((int)TargetFps);

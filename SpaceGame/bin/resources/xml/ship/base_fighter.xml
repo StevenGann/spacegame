@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <spaceship>
-  <drag>0.01</drag>
+  <drag>0.1</drag>
   <angulardrag>0.1</angulardrag>
   <rateoffire>1</rateoffire>
   <scale>0.25</scale>

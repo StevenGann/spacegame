@@ -337,6 +337,15 @@
           "build/Microsoft.NetFramework.Analyzers.props": {}
         }
       },
+      "NStack.Core/0.14.0": {
+        "type": "package",
+        "compile": {
+          "lib/netstandard2.0/NStack.dll": {}
+        },
+        "runtime": {
+          "lib/netstandard2.0/NStack.dll": {}
+        }
+      },
       "RayLib.NET.x64/1.0.0": {
         "type": "package",
         "compile": {
@@ -768,6 +777,18 @@
         },
         "runtime": {
           "lib/netcoreapp2.1/_._": {}
+        }
+      },
+      "Terminal.Gui/0.81.0": {
+        "type": "package",
+        "dependencies": {
+          "NStack.Core": "0.14.0"
+        },
+        "compile": {
+          "lib/netstandard2.0/Terminal.Gui.dll": {}
+        },
+        "runtime": {
+          "lib/netstandard2.0/Terminal.Gui.dll": {}
         }
       }
     }
@@ -1497,6 +1518,18 @@
         "rulesets/SecurityRulesEnabled.ruleset",
         "tools/install.ps1",
         "tools/uninstall.ps1"
+      ]
+    },
+    "NStack.Core/0.14.0": {
+      "sha512": "zYNd8033b7BPIw7LSNMFu3H1WovQa2XQXd3cZ+Xs/0EPqy0ZhT6bKr4+8eqFpvpD0yx2QvwkvLL0bCqSnJxKNA==",
+      "type": "package",
+      "path": "nstack.core/0.14.0",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "lib/netstandard2.0/NStack.dll",
+        "nstack.core.0.14.0.nupkg.sha512",
+        "nstack.core.nuspec"
       ]
     },
     "RayLib.NET.x64/1.0.0": {
@@ -3265,6 +3298,21 @@
         "useSharedDesignerContext.txt",
         "version.txt"
       ]
+    },
+    "Terminal.Gui/0.81.0": {
+      "sha512": "HSW9pvxXC+tzspTlUaqksNCoum5L7purbf/vXZgaMHHG5oye7DtxlOKjvSXMSKlxHN4JxZvfEGPUbjcA2B81sQ==",
+      "type": "package",
+      "path": "terminal.gui/0.81.0",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "lib/net472/Terminal.Gui.dll",
+        "lib/net472/Terminal.Gui.xml",
+        "lib/netstandard2.0/Terminal.Gui.dll",
+        "lib/netstandard2.0/Terminal.Gui.xml",
+        "terminal.gui.0.81.0.nupkg.sha512",
+        "terminal.gui.nuspec"
+      ]
     }
   },
   "projectFileDependencyGroups": {
@@ -3273,7 +3321,8 @@
       "Microsoft.CodeAnalysis.FxCopAnalyzers >= 3.0.0",
       "RayLib.NET.x64 >= 1.0.0",
       "SharpNoise >= 0.12.1.1",
-      "SixLabors.ImageSharp >= 1.0.0-rc0001"
+      "SixLabors.ImageSharp >= 1.0.0-rc0001",
+      "Terminal.Gui >= 0.81.0"
     ]
   },
   "packageFolders": {
@@ -3338,6 +3387,10 @@
           "SixLabors.ImageSharp": {
             "target": "Package",
             "version": "[1.0.0-rc0001, )"
+          },
+          "Terminal.Gui": {
+            "target": "Package",
+            "version": "[0.81.0, )"
           }
         },
         "imports": [

@@ -14,6 +14,7 @@
     <PackageReference Include="RayLib.NET.x64" Version="1.0.0" />
     <PackageReference Include="SharpNoise" Version="0.12.1.1" />
     <PackageReference Include="SixLabors.ImageSharp" Version="1.0.0-rc0001" />
+    <PackageReference Include="Terminal.Gui" Version="0.81.0" />
   </ItemGroup>
 
 </Project>

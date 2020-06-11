@@ -30,6 +30,7 @@ namespace SpaceGame
         public dynamic spawnScript;
         public dynamic destroyScript;
         private bool initialized = false;
+        private Dictionary<uint, double> Vars = new Dictionary<uint, double>();
 
         public bool Selected
         {
@@ -131,6 +132,30 @@ namespace SpaceGame
             }
 
             if (Hitbox != null && Debug.Enabled && !Debug.ConsoleIsOpen && Raylib.Raylib.IsKeyDown(KeyboardKey.KEY_F3)) { Hitbox.Draw(loc, (float)(Angle * 0.0174533), GameManager.ViewScale * Scale); }
+        }
+
+        public void SetVar(uint Id, double Value)
+        {
+            if (Vars.ContainsKey(Id))
+            {
+                Vars[Id] = Value;
+            }
+            else
+            {
+                Vars.Add(Id, Value);
+            }
+        }
+
+        public double GetVar(uint Id, double Default)
+        {
+            if (Vars.ContainsKey(Id))
+            {
+                return Vars[Id];
+            }
+            else
+            {
+                return Default;
+            }
         }
 
         public virtual void Destroy()
