@@ -1,16 +1,14 @@
-﻿using Raylib;
+﻿using System.Numerics;
+using Raylib_cs;
+using static Raylib_cs.Raylib;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Numerics;
-using System.Text;
-using Vector2 = Raylib.Vector2;
 
 namespace SpaceGame
 {
-    internal class UiManager
+    public static class UiManager
     {
-        public static UiManager Instance;
         public static Vector2 DownLocation { get; set; }
         public static Vector2 UpLocation { get; set; }
         public static Rectangle SelectionRectangle { get; set; }
@@ -30,8 +28,7 @@ namespace SpaceGame
         public static bool rightDown;
         public static Vector2 mousePosition;
 
-        private static Texture2D panelTexture = ResourceManager.GetTexture(@"ui\ninepatch_button").Texture;
-        private static Texture2D selectTexture = ResourceManager.GetTexture(@"ui\selection_box").Texture;
+        private static Texture2D selectTexture = ResourceManager.Get<TextureResource>(@"images\ui\selection_box").Texture;
 
         private static bool initialized = false;
 
@@ -46,35 +43,45 @@ namespace SpaceGame
             right = 16
         };
 
-        private static Random RNG = new Random();
         private static Vector2 downLocationScreen = new Vector2();
 
-        private static UiTray unitsTray;
+        private static UiUnitTray unitsTray;
 
         public static void Tick(double Delta)
         {
+            Debug.WriteOverlay("Tick: " + Delta.ToString());
             if (!initialized)
             {
-                UiMinimap map = new UiMinimap();
-                map.Bounds = new Rectangle(0, ScreenHeight - 300, 300, 300);
+                UiMinimap map = new UiMinimap
+                {
+                    Bounds = new Rectangle(0, ScreenHeight - 300, 300, 300)
+                };
                 UiElements.Add(map);
 
-                unitsTray = new UiTray();
-                unitsTray.Bounds = new Rectangle(300, ScreenHeight - 150, ScreenWidth - 300, 150);
+                unitsTray = new UiUnitTray
+                {
+                    Bounds = new Rectangle(300, ScreenHeight - 150, ScreenWidth - 300, 150)
+                };
                 UiElements.Add(unitsTray);
+
+                UiReinforcementTray reinforcementTray = new UiReinforcementTray
+                {
+                    Bounds = new Rectangle(0, 150, 300, 300)
+                };
+                UiElements.Add(reinforcementTray);
 
                 initialized = true;
             }
 
-            mousePressed = Raylib.Raylib.IsMouseButtonPressed(MouseButton.MOUSE_LEFT_BUTTON);
-            mouseReleased = Raylib.Raylib.IsMouseButtonReleased(MouseButton.MOUSE_LEFT_BUTTON);
-            mouseUp = Raylib.Raylib.IsMouseButtonUp(MouseButton.MOUSE_LEFT_BUTTON);
-            mouseDown = Raylib.Raylib.IsMouseButtonDown(MouseButton.MOUSE_LEFT_BUTTON);
-            rightPressed = Raylib.Raylib.IsMouseButtonPressed(MouseButton.MOUSE_LEFT_BUTTON);
-            rightReleased = Raylib.Raylib.IsMouseButtonReleased(MouseButton.MOUSE_RIGHT_BUTTON);
-            rightUp = Raylib.Raylib.IsMouseButtonUp(MouseButton.MOUSE_RIGHT_BUTTON);
-            rightDown = Raylib.Raylib.IsMouseButtonDown(MouseButton.MOUSE_RIGHT_BUTTON);
-            mousePosition = Raylib.Raylib.GetMousePosition();
+            mousePressed = IsMouseButtonPressed(MouseButton.MOUSE_LEFT_BUTTON);
+            mouseReleased = IsMouseButtonReleased(MouseButton.MOUSE_LEFT_BUTTON);
+            mouseUp = IsMouseButtonUp(MouseButton.MOUSE_LEFT_BUTTON);
+            mouseDown = IsMouseButtonDown(MouseButton.MOUSE_LEFT_BUTTON);
+            rightPressed = IsMouseButtonPressed(MouseButton.MOUSE_LEFT_BUTTON);
+            rightReleased = IsMouseButtonReleased(MouseButton.MOUSE_RIGHT_BUTTON);
+            rightUp = IsMouseButtonUp(MouseButton.MOUSE_RIGHT_BUTTON);
+            rightDown = IsMouseButtonDown(MouseButton.MOUSE_RIGHT_BUTTON);
+            mousePosition = GetMousePosition();
             bool inKeepout = InUi(mousePosition);
 
             if (inKeepout) { Debug.WriteOverlay("In UI"); }
@@ -84,10 +91,10 @@ namespace SpaceGame
                 downLocationScreen = mousePosition;
                 DownLocation = ScreenToWorld(mousePosition);
             }
-            else if (Raylib.Raylib.IsMouseButtonDown(MouseButton.MOUSE_LEFT_BUTTON) && !inKeepout)
+            else if (IsMouseButtonDown(MouseButton.MOUSE_LEFT_BUTTON) && !inKeepout)
             {
                 Vector2 mousePos = ScreenToWorld(mousePosition);
-                if (Raylib.Raylib.Vector2Distance(mousePos, DownLocation) > 64 && !InUi(downLocationScreen))
+                if (Vector2.Distance(mousePos, DownLocation) > 64 && !InUi(downLocationScreen))
                 {
                     MouseState = MouseStates.Dragging;
                     SelectionRectangle = RecFromVec(DownLocation, mousePos);
@@ -113,48 +120,45 @@ namespace SpaceGame
                 MouseState = MouseStates.Idle;
             }
 
-            if (rightReleased && MouseState == MouseStates.Idle)
+            if (rightReleased && MouseState == MouseStates.Idle && SelectedUnits.Count != 0)
             {
-                if (SelectedUnits.Count != 0)
-                {
-                    IEnumerable<SpaceObject> inSelection = GameManager.Instance.Objects.Where(o =>
-                           o is SpaceShip &&
-                           o.Active == true &&
-                           Raylib.Raylib.Vector2Distance(o.Location, ScreenToWorld(mousePosition)) < MathF.Max(o.TextureOffset.x, o.TextureOffset.y)
-                        );
+                IEnumerable<SpaceObject> inSelection = GameManager.Instance.Objects.Where(o =>
+                       o is SpaceShip &&
+                       o.Active &&
+                        Vector2.Distance(o.Location, ScreenToWorld(mousePosition)) < MathF.Max(o.TextureOffset.X, o.TextureOffset.Y)
+                    );
 
-                    if (inSelection.Any())
+                if (inSelection.Any())
+                {
+                    foreach (SpaceShipUnit unit in SelectedUnits)
                     {
-                        foreach (SpaceShipUnit unit in SelectedUnits)
+                        SpaceObject target = inSelection.First();
+                        foreach (SpaceObject spaceobj in inSelection)
                         {
-                            SpaceObject target = inSelection.First();
-                            foreach (SpaceObject spaceobj in inSelection)
+                            if (spaceobj is SpaceShipHardpoint)
                             {
-                                if (spaceobj is SpaceShipHardpoint)
-                                {
-                                    target = spaceobj;
-                                    break;
-                                }
-                            }
-                            if (unit.Leader != null)
-                            {
-                                unit.Leader.Objective = target;
-                                unit.Leader.Behavior = SpaceShip.Behaviors.Attacking;
+                                target = spaceobj;
+                                break;
                             }
                         }
-                    }
-                    else
-                    {
-                        foreach (SpaceShipUnit unit in SelectedUnits)
+                        if (unit.Leader != null)
                         {
-                            if (unit != null && unit.Leader != null)
-                            {
-                                unit.Leader.Objective = null;
-                                //(obj as SpaceShip).Goal = Raylib.Raylib.GetMousePosition();
-                                Vector2 mouse = ScreenToWorld(mousePosition);
-                                unit.Leader.Goal = mouse;
-                                unit.Leader.Behavior = SpaceShip.Behaviors.Going;
-                            }
+                            unit.Leader.Objective = target;
+                            unit.Leader.Behavior = SpaceShip.Behaviors.Attacking;
+                        }
+                    }
+                }
+                else
+                {
+                    foreach (SpaceShipUnit unit in SelectedUnits)
+                    {
+                        if (unit?.Leader != null)
+                        {
+                            unit.Leader.Objective = null;
+                            //(obj as SpaceShip).Goal =  GetMousePosition();
+                            Vector2 mouse = ScreenToWorld(mousePosition);
+                            unit.Leader.Goal = mouse;
+                            unit.Leader.Behavior = SpaceShip.Behaviors.Going;
                         }
                     }
                 }
@@ -162,7 +166,7 @@ namespace SpaceGame
 
             foreach (IUiElement element in UiElements)
             {
-                if (Raylib.Raylib.CheckCollisionPointRec(mousePosition, element.Bounds))
+                if (CheckCollisionPointRec(mousePosition, element.Bounds))
                 {
                     if (mousePressed) { element.MousePressed(); }
                     else if (mouseReleased) { element.MouseReleased(); }
@@ -177,7 +181,7 @@ namespace SpaceGame
         {
             foreach (IUiElement element in UiElements)
             {
-                if (Raylib.Raylib.CheckCollisionPointRec(point, element.Bounds))
+                if (CheckCollisionPointRec(point, element.Bounds))
                 {
                     return true;
                 }
@@ -190,12 +194,12 @@ namespace SpaceGame
             if (MouseState == MouseStates.Dragging)
             {
                 Rectangle selrec = new Rectangle(
-                    SelectionRectangle.x * GameManager.ViewScale + GameManager.ViewOffset.x,
-                    SelectionRectangle.y * GameManager.ViewScale + GameManager.ViewOffset.y,
+                    (SelectionRectangle.x * GameManager.ViewScale) + GameManager.ViewOffset.X,
+                    (SelectionRectangle.y * GameManager.ViewScale) + GameManager.ViewOffset.Y,
                     SelectionRectangle.width * GameManager.ViewScale,
                     SelectionRectangle.height * GameManager.ViewScale
                     );
-                Raylib.Raylib.DrawTextureNPatch(selectTexture, npi, selrec, new Vector2(0, 0), 0, Color.WHITE);
+                DrawTextureNPatch(selectTexture, npi, selrec, new Vector2(0, 0), 0, Color.WHITE);
             }
 
             foreach (IUiElement element in UiElements)
@@ -210,14 +214,14 @@ namespace SpaceGame
             {
                 IEnumerable<SpaceObject> inSelection = GameManager.Instance.Objects.Where(o =>
                        o is SpaceShip &&
-                       o.Active == true &&
-                       o.Location.x > SelectionRectangle.x &&
-                       o.Location.y > SelectionRectangle.y &&
-                       o.Location.x < SelectionRectangle.x + SelectionRectangle.width &&
-                       o.Location.y < SelectionRectangle.y + SelectionRectangle.height
+                       o.Active &&
+                       o.Location.X > SelectionRectangle.x &&
+                       o.Location.Y > SelectionRectangle.y &&
+                       o.Location.X < SelectionRectangle.x + SelectionRectangle.width &&
+                       o.Location.Y < SelectionRectangle.y + SelectionRectangle.height
                     );
                 if (!inSelection.Any()) { return; }
-                if (!Raylib.Raylib.IsKeyDown(KeyboardKey.KEY_LEFT_SHIFT))
+                if (!IsKeyDown(KeyboardKey.KEY_LEFT_SHIFT))
                 {
                     ClearSelection();
                 }
@@ -233,15 +237,15 @@ namespace SpaceGame
             {
                 IEnumerable<SpaceObject> inSelection = GameManager.Instance.Objects.Where(o =>
                        o is SpaceShip &&
-                       o.Active == true &&
-                       Raylib.Raylib.Vector2Distance(o.Location, UpLocation) < MathF.Max(o.TextureOffset.x, o.TextureOffset.y)
+                       o.Active &&
+                        Vector2.Distance(o.Location, UpLocation) < MathF.Max(o.TextureOffset.X, o.TextureOffset.Y)
                     );
                 if (!inSelection.Any())
                 {
                     ClearSelection();
                     return;
                 }
-                if (!Raylib.Raylib.IsKeyDown(KeyboardKey.KEY_LEFT_SHIFT))
+                if (!IsKeyDown(KeyboardKey.KEY_LEFT_SHIFT))
                 {
                     ClearSelection();
                 }
@@ -271,19 +275,15 @@ namespace SpaceGame
             unitsTray.Children.Clear();
             foreach (SpaceObject s in Selected)
             {
-                SpaceShip ship = s as SpaceShip;
-                if (ship != null)
+                if ((s is SpaceShip ship) && ship != null && !SelectedUnits.Contains(ship.Unit))
                 {
-                    if (!SelectedUnits.Contains(ship.Unit))
+                    SelectedUnits.Add(ship.Unit);
+                    UiTrayUnit trayUnit = new UiTrayUnit
                     {
-                        SelectedUnits.Add(ship.Unit);
-                        UiTrayUnit trayUnit = new UiTrayUnit
-                        {
-                            Unit = ship.Unit,
-                            Bounds = new Rectangle(0, 0, 75, 100)
-                        };
-                        unitsTray.Children.Add(trayUnit);
-                    }
+                        Unit = ship.Unit,
+                        Bounds = new Rectangle(0, 0, 75, 100)
+                    };
+                    unitsTray.Children.Add(trayUnit);
                 }
             }
             Debug.WriteLine("Synced unit selection");
@@ -291,7 +291,7 @@ namespace SpaceGame
 
         public static Vector2 ScreenToWorld(Vector2 Point)
         {
-            return Point / GameManager.ViewScale - GameManager.ViewOffset / GameManager.ViewScale;
+            return (Point / GameManager.ViewScale) - (GameManager.ViewOffset / GameManager.ViewScale);
         }
 
         public static Vector2 WorldToScreen(Vector2 Point)
@@ -305,10 +305,10 @@ namespace SpaceGame
             Vector2 BottomRight = ScreenToWorld(new Vector2(Box.x + Box.width, Box.y + Box.height));
             return new Rectangle()
             {
-                x = TopLeft.x,
-                y = TopLeft.y,
-                width = BottomRight.x - TopLeft.x,
-                height = BottomRight.y - TopLeft.y
+                x = TopLeft.X,
+                y = TopLeft.Y,
+                width = BottomRight.X - TopLeft.X,
+                height = BottomRight.Y - TopLeft.Y
             };
         }
 
@@ -318,19 +318,11 @@ namespace SpaceGame
             Vector2 BottomRight = WorldToScreen(new Vector2(Box.x + Box.width, Box.y + Box.height));
             return new Rectangle()
             {
-                x = TopLeft.x,
-                y = TopLeft.y,
-                width = BottomRight.x - TopLeft.x,
-                height = BottomRight.y - TopLeft.y
+                x = TopLeft.X,
+                y = TopLeft.Y,
+                width = BottomRight.X - TopLeft.X,
+                height = BottomRight.Y - TopLeft.Y
             };
-        }
-
-        public static void Instantiate()
-        {
-            if (Instance == null)
-            {
-                Instance = new UiManager();
-            }
         }
 
         public enum MouseStates
@@ -343,10 +335,10 @@ namespace SpaceGame
         private static Rectangle RecFromVec(Vector2 A, Vector2 B)
         {
             return new Rectangle(
-                MathF.Min(A.x, B.x),
-                MathF.Min(A.y, B.y),
-                MathF.Abs(A.x - B.x),
-                MathF.Abs(A.y - B.y)
+                MathF.Min(A.X, B.X),
+                MathF.Min(A.Y, B.Y),
+                MathF.Abs(A.X - B.X),
+                MathF.Abs(A.Y - B.Y)
                 );
         }
     }
@@ -373,8 +365,9 @@ namespace SpaceGame
         public Rectangle Bounds { get; set; } = new Rectangle(0, 0, 300, 300);
         private const float MinimapSize = 512;
         private const float margin = 4f;
-        private static RenderTexture2D MinimapTexture = Raylib.Raylib.LoadRenderTexture((int)MinimapSize, (int)MinimapSize);
-        private static Texture2D panelTexture = ResourceManager.GetTexture(@"ui\ninepatch_button").Texture;
+        private static RenderTexture2D MinimapTexture = LoadRenderTexture((int)MinimapSize, (int)MinimapSize);
+        private static Texture2D panelTexture = ResourceManager.Get<TextureResource>(@"images\ui\ninepatch_button").Texture;
+        private static Texture2D bkgTex = ResourceManager.Get<TextureResource>(@"images\_menu\haze+").Texture;
 
         private static NPatchInfo npi = new NPatchInfo()
         {
@@ -406,50 +399,126 @@ namespace SpaceGame
 
         public void Tick()
         {
-            Raylib.Raylib.BeginTextureMode(MinimapTexture);
-            Texture2D bkgTex = ResourceManager.GetTexture(@"_menu\haze+").Texture;
-            Raylib.Raylib.DrawTexturePro(bkgTex, new Rectangle(0, 0, bkgTex.width, bkgTex.height), new Rectangle(0, 0, MinimapSize, MinimapSize), Vector2.Zero, 0.0f, Color.WHITE);
+            BeginTextureMode(MinimapTexture);
+
+            DrawTexturePro(bkgTex, new Rectangle(0, 0, bkgTex.width, bkgTex.height), new Rectangle(0, 0, MinimapSize, MinimapSize), Vector2.Zero, 0.0f, Color.WHITE);
             float scaleFactor = MinimapSize / GameManager.MapSize;
 
             Debug.WriteOverlay("View Scale: " + GameManager.ViewScale);
-            Raylib.Raylib.BeginBlendMode(BlendMode.BLEND_ADDITIVE);
+            BeginBlendMode(BlendMode.BLEND_ADDITIVE);
             Vector2 TL = UiManager.ScreenToWorld(new Vector2(0, UiManager.ScreenHeight)) * scaleFactor;
             Vector2 BR = UiManager.ScreenToWorld(new Vector2(UiManager.ScreenWidth, 0)) * scaleFactor;
-            Raylib.Raylib.DrawRectangle((int)TL.x, (int)(MinimapSize - TL.y), (int)(BR.x - TL.x), (int)(TL.y - BR.y), new Color(0, 255, 0, 16));
+            DrawRectangle((int)TL.X, (int)(MinimapSize - TL.Y), (int)(BR.X - TL.X), (int)(TL.Y - BR.Y), new Color(0, 255, 0, 16));
             Color c = new Color(64, 255, 64, 64);
-            float t = 2.5f * (MinimapSize / 300f);
-            Raylib.Raylib.DrawLineEx(new Vector2(TL.x, MinimapSize - TL.y), new Vector2(TL.x, MinimapSize - BR.y), t, c);
-            Raylib.Raylib.DrawLineEx(new Vector2(BR.x, MinimapSize - TL.y), new Vector2(BR.x, MinimapSize - BR.y), t, c);
-            Raylib.Raylib.DrawLineEx(new Vector2(TL.x, MinimapSize - BR.y), new Vector2(BR.x, MinimapSize - BR.y), t, c);
-            Raylib.Raylib.DrawLineEx(new Vector2(TL.x, MinimapSize - TL.y), new Vector2(BR.x, MinimapSize - TL.y), t, c);
+            const float t = 2.5f * (MinimapSize / 300f);
+            DrawLineEx(new Vector2(TL.X, MinimapSize - TL.Y), new Vector2(TL.X, MinimapSize - BR.Y), t, c);
+            DrawLineEx(new Vector2(BR.X, MinimapSize - TL.Y), new Vector2(BR.X, MinimapSize - BR.Y), t, c);
+            DrawLineEx(new Vector2(TL.X, MinimapSize - BR.Y), new Vector2(BR.X, MinimapSize - BR.Y), t, c);
+            DrawLineEx(new Vector2(TL.X, MinimapSize - TL.Y), new Vector2(BR.X, MinimapSize - TL.Y), t, c);
 
             foreach (SpaceObject obj in GameManager.Instance.Objects)
             {
                 if (obj.Active)
                 {
                     Vector2 pos = (obj.Location * scaleFactor);
-                    pos = new Vector2(pos.x, MinimapSize - pos.y);
+                    pos = new Vector2(pos.X, MinimapSize - pos.Y);
                     obj.DrawMinimap(pos);
                 }
             }
-            Raylib.Raylib.EndBlendMode();
-            Raylib.Raylib.EndTextureMode();
+            EndBlendMode();
+            EndTextureMode();
         }
 
         public void Draw()
         {
-            Raylib.Raylib.DrawTextureNPatch(panelTexture, npi, new Rectangle(Bounds.x, Bounds.y, Bounds.width, Bounds.height), new Vector2(0, 0), 0, Color.WHITE);
+            DrawTextureNPatch(panelTexture, npi, new Rectangle(Bounds.x, Bounds.y, Bounds.width, Bounds.height), new Vector2(0, 0), 0, Color.WHITE);
 
-            Raylib.Raylib.DrawTexturePro(MinimapTexture.texture, new Rectangle(0, 0, MinimapSize, MinimapSize), new Rectangle(Bounds.x + margin, Bounds.y + margin, Bounds.width - (2 * margin), Bounds.height - (2 * margin)), Vector2.Zero, 0.0f, Color.WHITE);
+            DrawTexturePro(MinimapTexture.texture, new Rectangle(0, 0, MinimapSize, MinimapSize), new Rectangle(Bounds.x + margin, Bounds.y + margin, Bounds.width - (2 * margin), Bounds.height - (2 * margin)), Vector2.Zero, 0.0f, Color.WHITE);
         }
     }
 
-    public class UiTray : IUiElement
+    public class UiReinforcementTray : IUiElement
+    {
+        public Rectangle Bounds
+        {
+            get
+            {
+                if (IsOpen) { return bounds; }
+                else { return new Rectangle(bounds.x - margin, bounds.y + margin, openTexture.width, openTexture.height); }
+            }
+            set { bounds = value; }
+        }
+
+        private Rectangle bounds = new Rectangle(0, 0, 300, 300);
+        public List<IUiElement> Children = new List<IUiElement>();
+        public bool IsOpen = true;
+        private const float margin = 4f;
+        private static Texture2D panelTexture = ResourceManager.Get<TextureResource>(@"images\ui\ninepatch_button").Texture;
+        private static Texture2D closedTexture = ResourceManager.Get<TextureResource>(@"images\ui\collapsed").Texture;
+        private static Texture2D openTexture = ResourceManager.Get<TextureResource>(@"images\ui\expanded").Texture;
+
+        private static NPatchInfo npi = new NPatchInfo()
+        {
+            sourceRec = new Rectangle(0, 0, 64, 64),
+            top = 16,
+            bottom = 16,
+            left = 16,
+            right = 16
+        };
+
+        public void MouseDown()
+        {
+        }
+
+        public void MouseHover()
+        {
+        }
+
+        public void MousePressed()
+        {
+        }
+
+        public void MouseReleased()
+        {
+            if (IsOpen && CheckCollisionPointRec(UiManager.mousePosition, new Rectangle(bounds.x + bounds.width - openTexture.width - margin, bounds.y + margin, openTexture.width, openTexture.height)))
+            {
+                IsOpen = false;
+            }
+            if (!IsOpen && CheckCollisionPointRec(UiManager.mousePosition, new Rectangle(bounds.x - margin, bounds.y + margin, openTexture.width, openTexture.height)))
+            {
+                IsOpen = true;
+            }
+        }
+
+        public void Tick()
+        {
+        }
+
+        public void Draw()
+        {
+            if (IsOpen)
+            {
+                DrawTextureNPatch(panelTexture, npi, new Rectangle(bounds.x - npi.left, bounds.y, bounds.width + npi.left, bounds.height), new Vector2(0, 0), 0, Color.WHITE);
+                DrawTexture(openTexture, (int)(bounds.x + bounds.width - openTexture.width - margin), (int)(bounds.y + margin), Color.WHITE);
+                foreach (IUiElement child in Children)
+                {
+                    child.Draw();
+                }
+            }
+            else
+            {
+                DrawTextureNPatch(panelTexture, npi, new Rectangle(bounds.x - npi.left, bounds.y, npi.left + npi.right, bounds.height), new Vector2(0, 0), 0, Color.WHITE);
+                DrawTexture(closedTexture, (int)(bounds.x - margin), (int)(bounds.y + margin), Color.WHITE);
+            }
+        }
+    }
+
+    public class UiUnitTray : IUiElement
     {
         public Rectangle Bounds { get; set; } = new Rectangle(0, 0, 300, 300);
         public List<IUiElement> Children = new List<IUiElement>();
         private const float margin = 4f;
-        private static Texture2D panelTexture = ResourceManager.GetTexture(@"ui\ninepatch_button").Texture;
+        private static Texture2D panelTexture = ResourceManager.Get<TextureResource>(@"images\ui\ninepatch_button").Texture;
 
         private static NPatchInfo npi = new NPatchInfo()
         {
@@ -464,7 +533,7 @@ namespace SpaceGame
         {
             for (int i = 0; i < Children.Count; i++)
             {
-                if (Raylib.Raylib.CheckCollisionPointRec(UiManager.mousePosition, Children[i].Bounds))
+                if (CheckCollisionPointRec(UiManager.mousePosition, Children[i].Bounds))
                 {
                     Children[i].MousePressed();
                 }
@@ -475,7 +544,7 @@ namespace SpaceGame
         {
             for (int i = 0; i < Children.Count; i++)
             {
-                if (Raylib.Raylib.CheckCollisionPointRec(UiManager.mousePosition, Children[i].Bounds))
+                if (CheckCollisionPointRec(UiManager.mousePosition, Children[i].Bounds))
                 {
                     Children[i].MouseDown();
                 }
@@ -486,7 +555,7 @@ namespace SpaceGame
         {
             for (int i = 0; i < Children.Count; i++)
             {
-                if (Raylib.Raylib.CheckCollisionPointRec(UiManager.mousePosition, Children[i].Bounds))
+                if (CheckCollisionPointRec(UiManager.mousePosition, Children[i].Bounds))
                 {
                     Children[i].MouseHover();
                 }
@@ -497,7 +566,7 @@ namespace SpaceGame
         {
             for (int i = 0; i < Children.Count; i++)
             {
-                if (Raylib.Raylib.CheckCollisionPointRec(UiManager.mousePosition, Children[i].Bounds))
+                if (CheckCollisionPointRec(UiManager.mousePosition, Children[i].Bounds))
                 {
                     Children[i].MouseReleased();
                 }
@@ -521,7 +590,7 @@ namespace SpaceGame
 
         public void Draw()
         {
-            Raylib.Raylib.DrawTextureNPatch(panelTexture, npi, new Rectangle(Bounds.x, Bounds.y, Bounds.width, Bounds.height), new Vector2(0, 0), 0, Color.WHITE);
+            DrawTextureNPatch(panelTexture, npi, new Rectangle(Bounds.x, Bounds.y, Bounds.width, Bounds.height), new Vector2(0, 0), 0, Color.WHITE);
             foreach (IUiElement child in Children)
             {
                 child.Draw();
@@ -534,7 +603,7 @@ namespace SpaceGame
         public Rectangle Bounds { get; set; } = new Rectangle(0, 0, 300, 300);
         public SpaceShipUnit Unit { get; set; }
         private const float margin = 4f;
-        private static Texture2D panelTexture = ResourceManager.GetTexture(@"ui\ninepatch_button").Texture;
+        private static Texture2D panelTexture = ResourceManager.Get<TextureResource>(@"images\ui\ninepatch_button").Texture;
 
         private static NPatchInfo npi = new NPatchInfo()
         {
@@ -571,23 +640,23 @@ namespace SpaceGame
         public void Draw()
         {
             if (Unit == null || Unit.Units.Count == 0) { return; }
-            Raylib.Raylib.DrawTextureNPatch(panelTexture, npi, new Rectangle(Bounds.x, Bounds.y, Bounds.width, Bounds.height), new Vector2(0, 0), 0, Color.WHITE);
+            DrawTextureNPatch(panelTexture, npi, new Rectangle(Bounds.x, Bounds.y, Bounds.width, Bounds.height), new Vector2(0, 0), 0, Color.WHITE);
 
-            float unitHeight = 80;
-            float unitWidth = 75;
-            int barWidth = (int)(unitWidth - margin * 2);
-            int barHeight = 8;
-            float barOffset = Bounds.height - (barHeight * 4 + margin * 2);
+            const float unitHeight = 80;
+            const float unitWidth = 75;
+            const int barWidth = (int)(unitWidth - (margin * 2));
+            const int barHeight = 8;
+            float barOffset = Bounds.height - ((barHeight * 4) + (margin * 2));
 
             Texture2D tex = Unit.UiImage.Texture;
             float scalar = MathF.Min(MathF.Min(unitWidth / tex.width, unitHeight / tex.height), 1f);
             Vector2 offset = new Vector2((unitWidth - (tex.width * scalar)) / 2f, (unitHeight - (tex.height * scalar)) / 2f);
-            Raylib.Raylib.DrawTextureEx(tex, new Vector2(Bounds.x, Bounds.y) + offset, 0, scalar, Color.WHITE);
+            DrawTextureEx(tex, new Vector2(Bounds.x, Bounds.y) + offset, 0, scalar, Color.WHITE);
 
-            Raylib.Raylib.DrawRectangle((int)(Bounds.x + margin), (int)(Bounds.y + barOffset), (int)Math.Round(barWidth * (Unit.Units[0].Shield / Unit.Units[0].MaxShield)), barHeight, Color.GREEN);
-            Raylib.Raylib.DrawRectangleLines((int)(Bounds.x + margin), (int)(Bounds.y + barOffset), barWidth, barHeight, Color.DARKGREEN);
-            Raylib.Raylib.DrawRectangle((int)(Bounds.x + margin), (int)(Bounds.y + barOffset) + barHeight + 1, (int)Math.Round(barWidth * (Unit.Units[0].Hull / Unit.Units[0].MaxHull)), barHeight, Color.RED);
-            Raylib.Raylib.DrawRectangleLines((int)(Bounds.x + margin), (int)(Bounds.y + barOffset) + barHeight + 1, barWidth, barHeight, Color.DARKPURPLE);
+            DrawRectangle((int)(Bounds.x + margin), (int)(Bounds.y + barOffset), (int)Math.Round(barWidth * (Unit.Units[0].Shield / Unit.Units[0].MaxShield)), barHeight, Color.GREEN);
+            DrawRectangleLines((int)(Bounds.x + margin), (int)(Bounds.y + barOffset), barWidth, barHeight, Color.DARKGREEN);
+            DrawRectangle((int)(Bounds.x + margin), (int)(Bounds.y + barOffset) + barHeight + 1, (int)Math.Round(barWidth * (Unit.Units[0].Hull / Unit.Units[0].MaxHull)), barHeight, Color.RED);
+            DrawRectangleLines((int)(Bounds.x + margin), (int)(Bounds.y + barOffset) + barHeight + 1, barWidth, barHeight, Color.DARKPURPLE);
         }
     }
 }

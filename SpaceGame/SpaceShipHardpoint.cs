@@ -1,4 +1,6 @@
-﻿using Raylib;
+﻿using System.Numerics;
+using Raylib_cs;
+using static Raylib_cs.Raylib;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -31,8 +33,8 @@ namespace SpaceGame
             float sin = MathF.Sin(radians);
             float cos = MathF.Cos(radians);
 
-            float tx = v.x;
-            float ty = v.y;
+            float tx = v.X;
+            float ty = v.Y;
             float rx = (cos * tx) - (sin * ty);
             float ry = (sin * tx) + (cos * ty);
             return new Vector2(rx, ry);
@@ -56,7 +58,7 @@ namespace SpaceGame
             {
                 try
                 {
-                    baseObject = SpaceShipHardpoint.FromXml(ResourceManager.GetXml(baseName), null);
+                    baseObject = SpaceShipHardpoint.FromXml(ResourceManager.Get<XmlResource>(baseName), null);
                 }
                 catch (KeyNotFoundException e)
                 {
@@ -67,7 +69,7 @@ namespace SpaceGame
 
             string[] offsetRaw = GetXmlText(obj, "Offset", "0,0").Split(',');
             Result.Offset = new Vector2(float.Parse(offsetRaw[0]), float.Parse(offsetRaw[1]));
-            Result.Texture = ResourceManager.GetTexture(GetXmlText(obj, "Texture", baseObject.Texture.Name));
+            Result.Texture = ResourceManager.Get<TextureResource>(GetXmlText(obj, "Texture", baseObject.Texture.Name));
             return Result;
         }
 

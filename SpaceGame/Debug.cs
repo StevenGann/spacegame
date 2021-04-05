@@ -1,24 +1,18 @@
-﻿using Raylib;
+﻿using System.Numerics;
+using Raylib_cs;
+using static Raylib_cs.Raylib;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
-using static Raylib.Raylib;
-
-using NStack;
-using System.Diagnostics;
-using System.Globalization;
 using System.IO;
-using System.Reflection;
-using System.Threading;
-using Terminal.Gui;
-using Color = Raylib.Color;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using SpaceGame;
 
 namespace SpaceGame
 {
+    /// <summary>
+    /// Debug utility class
+    /// </summary>
     public class Debug
     {
         /// <summary>
@@ -35,7 +29,7 @@ namespace SpaceGame
         {
             get
             {
-                if (instance != null && instance.consoleLines.Count > 0)
+                if (instance?.consoleLines.Count > 0)
                 {
                     return instance.consoleLines.Peek();
                 }
@@ -54,6 +48,7 @@ namespace SpaceGame
         private Queue<DrawShapeJob> shapeJobs = new Queue<DrawShapeJob>();
         private Queue<string> overlayLines = new Queue<string>();
         private Stack<string> consoleLines = new Stack<string>();
+        private Queue<string> logLines = new Queue<string>();
         private Stack<string> consoleLinesBuffer = new Stack<string>();
         private static int consoleLinesOffset;
         private int consoleMaxLines = 64;
@@ -72,6 +67,8 @@ namespace SpaceGame
         private static bool showCursor = true;
         private static bool echo = true;
         private static double framerate;
+        private static int logfileCount = 4;
+        private static string logfileName = "spacegame.#.log";
 
         /// <summary>
         /// Default constructor.
@@ -91,9 +88,21 @@ namespace SpaceGame
             Commands.Add("batch", new Tuple<Func<List<string>, int>, string>(CommandBatch, "Use: \"batch <filename>\" Executes the specified batch file"));
             Commands.Add("rem", new Tuple<Func<List<string>, int>, string>(CommandRem, "Use: \"rem <anything>\" Echos to the console"));
             Commands.Add("echo", new Tuple<Func<List<string>, int>, string>(CommandEcho, "Use: \"echo <value>\" Sets Echo ON/OFF, or 1/0"));
-            consoleLines.Push("Console initialized.");
 
-            //ConsoleUi.Start();
+            if (File.Exists(logfileName.Replace("#", (logfileCount - 1).ToString())))
+            {
+                File.Delete(logfileName.Replace("#", (logfileCount - 1).ToString()));
+            }
+            for (int i = logfileCount - 1; i >= 0; i--)
+            {
+                if (File.Exists(logfileName.Replace("#", i.ToString())))
+                {
+                    File.Move(logfileName.Replace("#", i.ToString()), logfileName.Replace("#", (i + 1).ToString()));
+                }
+            }
+            File.Create(logfileName.Replace("#", "0"));
+
+            consoleLines.Push("Console initialized.");
         }
 
         public static void RegisterCommand(string Name, Func<List<string>, int> Function, string Help)
@@ -104,14 +113,7 @@ namespace SpaceGame
 
         public static void SetFlag(string Name, double Value)
         {
-            if (Flags.ContainsKey(Name.ToUpperInvariant()))
-            {
-                Flags[Name.ToUpperInvariant()] = Value;
-            }
-            else
-            {
-                Flags.Add(Name.ToUpperInvariant(), Value);
-            }
+            Flags[Name.ToUpperInvariant()] = Value;
         }
 
         public static double GetFlag(string Name)
@@ -130,9 +132,11 @@ namespace SpaceGame
         /// <summary>
         /// Adds a line of text to the in-game console pane and echos to System.Console.
         /// </summary>
-        /// <param name="text">Text to be displayed</param>
-        public static void WriteLine(string text)
+        /// <param name="Text">Text to be displayed</param>
+        public static void WriteLine(object Text)
         {
+            if (Text == null) { return; }
+            string text = Text.ToString();
             if (text == null) { return; }
 
             if (text.Contains("\n"))
@@ -174,14 +178,17 @@ namespace SpaceGame
             {
                 instance.consoleLines.Push(text);
             }
+            instance.logLines.Enqueue(DateTime.Now.ToString("HH:mm:ss.ffff", System.Globalization.DateTimeFormatInfo.InvariantInfo) + " | " + text);
         }
 
         /// <summary>
         /// Queues a line of text to be rendered in the debug overlay during the next frame.
         /// </summary>
-        /// <param name="text">Text to be displayed</param>
-        public static void WriteOverlay(string text)
+        /// <param name="Text">Text to be displayed</param>
+        public static void WriteOverlay(object Text)
         {
+            if (Text == null) { return; }
+            string text = Text.ToString();
             if (instance == null) { instance = new Debug(); }
             if (!Enabled) { return; }
             lock (instance.overlayLines)
@@ -193,12 +200,14 @@ namespace SpaceGame
         /// <summary>
         /// Queues a line of text to be drawn on the screen at the specified location during the next frame.
         /// </summary>
-        /// <param name="text">Text to be displayed</param>
+        /// <param name="Text">Text to be displayed</param>
         /// <param name="x">X screen coordinate to draw at</param>
         /// <param name="y">Y screen coordinate to draw at</param>
         /// <param name="size">Size of text</param>
-        public static void DrawText(string text, int x, int y, int size)
+        public static void DrawText(object Text, int x, int y, int size)
         {
+            if (Text == null) { return; }
+            string text = Text.ToString();
             if (instance == null) { instance = new Debug(); }
             if (!Enabled) { return; }
             DrawTextJob j = new DrawTextJob
@@ -260,8 +269,6 @@ namespace SpaceGame
         {
             if (instance == null) { instance = new Debug(); }
 
-            //ConsoleUi.Tick();
-
             if (IsKeyPressed(KeyboardKey.KEY_F1))
             {
                 if (Enabled)
@@ -297,12 +304,11 @@ namespace SpaceGame
             }
             if (!instance.initialized)
             {
-                instance.font = ResourceManager.GetFont("Perfect_DOS_VGA_437_Win").Font;
+                instance.font = ResourceManager.Get<FontResource>(@"fonts\Perfect_DOS_VGA_437_Win").Font;
                 instance.initialized = true;
             }
-
             // ------------------------------------------------------------------------------------
-            framerate += Math.Max(Raylib.Raylib.GetFPS() + 0.5, 0);
+            framerate += Math.Max(GetFPS() + 0.5, 0);
             framerate = Math.Round(framerate / 2);
             Debug.WriteOverlay("FPS: " + Convert.ToString((int)framerate, null));
 
@@ -315,11 +321,11 @@ namespace SpaceGame
                     DrawShapeJob j = instance.shapeJobs.Dequeue();
                     if (j.ShapeType == Shapes.Line)
                     {
-                        Raylib.Raylib.DrawLine(j.A, j.B, j.C, j.D, j.Color);
+                        Raylib.DrawLine(j.A, j.B, j.C, j.D, j.Color);
                     }
                     else if (j.ShapeType == Shapes.Rectangle)
                     {
-                        Raylib.Raylib.DrawRectangle(j.A, j.B, j.C, j.D, j.Color);
+                        Raylib.DrawRectangle(j.A, j.B, j.C, j.D, j.Color);
                     }
                 }
             }
@@ -327,7 +333,6 @@ namespace SpaceGame
             if (instance.consoleSize > 0)
             {
                 UpdateTerminal();
-                //Debug.WriteOverlay(terminalBuffer.Insert(terminalCursor, showCursor ? "_" : " "));
 
                 DrawRectangle(0, 0, GetScreenWidth(), instance.consoleSize, instance.backgroundColor);
                 DrawLineEx(new Vector2(0, instance.consoleSize + 1), new Vector2(GetScreenWidth(), instance.consoleSize + 1), 2, Color.WHITE);
@@ -336,8 +341,8 @@ namespace SpaceGame
 
                 lock (instance.consoleLines)
                 {
-                    p.x = 4;
-                    p.y = instance.consoleSize - (instance.consoleFontSize * 2) - 2;
+                    p.X = 4;
+                    p.Y = instance.consoleSize - (instance.consoleFontSize * 2) - 2;
                     int count = instance.consoleLines.Count;
                     for (int i = 0; i < Math.Min(instance.consoleMaxLines, count); i++)
                     {
@@ -361,7 +366,7 @@ namespace SpaceGame
                                 }
                             }
 
-                            if (p.y > -instance.consoleFontSize)
+                            if (p.Y > -instance.consoleFontSize)
                             {
                                 if (!string.IsNullOrEmpty(tag))
                                 {
@@ -369,12 +374,12 @@ namespace SpaceGame
                                     if (tag == "SUCCESS") { c = new Color(0, 255, 0, 64); }
                                     else if (tag == "WARNING") { c = new Color(255, 255, 0, 64); }
                                     else if (tag == "ERROR") { c = new Color(255, 0, 0, 64); }
-                                    DrawRectangle((int)p.x - 2, (int)p.y + 1, GetScreenWidth() - 2, instance.consoleFontSize - 1, c);
+                                    DrawRectangle((int)p.X - 2, (int)p.Y + 1, GetScreenWidth() - 2, instance.consoleFontSize - 1, c);
                                 }
                                 DrawTextEx(instance.font, line, p, instance.consoleFontSize, 1.0f, instance.foregroundColor);
                             }
 
-                            p.y -= instance.consoleFontSize;
+                            p.Y -= instance.consoleFontSize;
                         }
                         instance.consoleLinesBuffer.Push(originalLine);
                     }
@@ -396,21 +401,21 @@ namespace SpaceGame
                     DrawTextJob j = instance.textJobs.Dequeue();
                     if (j.Y > instance.consoleSize)
                     {
-                        p.x = j.X - 1;
-                        p.y = j.Y - 1;
+                        p.X = j.X - 1;
+                        p.Y = j.Y - 1;
                         DrawTextEx(instance.font, j.Text, p, j.Size, 1.0f, instance.outlineColor);
-                        p.x = j.X + 1;
-                        p.y = j.Y + 1;
+                        p.X = j.X + 1;
+                        p.Y = j.Y + 1;
                         DrawTextEx(instance.font, j.Text, p, j.Size, 1.0f, instance.outlineColor);
-                        p.x = j.X - 1;
-                        p.y = j.Y + 1;
+                        p.X = j.X - 1;
+                        p.Y = j.Y + 1;
                         DrawTextEx(instance.font, j.Text, p, j.Size, 1.0f, instance.outlineColor);
-                        p.x = j.X + 1;
-                        p.y = j.Y - 1;
+                        p.X = j.X + 1;
+                        p.Y = j.Y - 1;
                         DrawTextEx(instance.font, j.Text, p, j.Size, 1.0f, instance.outlineColor);
 
-                        p.x = j.X;
-                        p.y = j.Y;
+                        p.X = j.X;
+                        p.Y = j.Y;
                         DrawTextEx(instance.font, j.Text, p, j.Size, 1.0f, Color.BLACK);
                     }
                 }
@@ -418,99 +423,108 @@ namespace SpaceGame
 
             lock (instance.overlayLines)
             {
-                p.y = instance.consoleSize + (instance.consoleFontSize * 0.25f);
-                p.x = 4;
+                p.Y = instance.consoleSize + (instance.consoleFontSize * 0.25f);
+                p.X = 4;
                 while (instance.overlayLines.Count > 0)
                 {
                     string line = instance.overlayLines.Dequeue();
-                    DrawRectangle((int)p.x - 2, (int)p.y - 1, (int)((line.Length * instance.consoleFontSize * 0.66f) - 2), instance.consoleFontSize - 1, instance.outlineColor);
+                    DrawRectangle((int)p.X - 2, (int)p.Y - 1, (int)((line.Length * instance.consoleFontSize * 0.66f) - 2), instance.consoleFontSize - 1, instance.outlineColor);
                     DrawTextEx(instance.font, line, p, instance.consoleFontSize, 1.0f, Color.BLACK);
-                    p.y += instance.consoleFontSize;
+                    p.Y += instance.consoleFontSize;
+                }
+            }
+
+            if (instance.logLines.Count > 0)
+            {
+                using StreamWriter stream = new FileInfo(logfileName.Replace("#", "0")).AppendText();
+                while (instance.logLines.Count > 0)
+                {
+                    stream.WriteLine(instance.logLines.Dequeue());
                 }
             }
         }
 
         private static void UpdateTerminal()
         {
-            if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_A)) { insertLetter("A"); }
-            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_B)) { insertLetter("B"); }
-            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_C)) { insertLetter("C"); }
-            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_D)) { insertLetter("D"); }
-            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_E)) { insertLetter("E"); }
-            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_F)) { insertLetter("F"); }
-            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_G)) { insertLetter("G"); }
-            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_H)) { insertLetter("H"); }
-            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_I)) { insertLetter("I"); }
-            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_J)) { insertLetter("J"); }
-            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_K)) { insertLetter("K"); }
-            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_L)) { insertLetter("L"); }
-            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_M)) { insertLetter("M"); }
-            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_N)) { insertLetter("N"); }
-            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_O)) { insertLetter("O"); }
-            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_P)) { insertLetter("P"); }
-            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_Q)) { insertLetter("Q"); }
-            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_R)) { insertLetter("R"); }
-            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_S)) { insertLetter("S"); }
-            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_T)) { insertLetter("T"); }
-            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_U)) { insertLetter("U"); }
-            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_V)) { insertLetter("V"); }
-            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_W)) { insertLetter("W"); }
-            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_X)) { insertLetter("X"); }
-            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_Y)) { insertLetter("Y"); }
-            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_Z)) { insertLetter("Z"); }
-            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_SPACE)) { insertLetter(" "); }
-            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_ONE)) { insertLetter("1", "!"); }
-            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_TWO)) { insertLetter("2", "@"); }
-            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_THREE)) { insertLetter("3", "#"); }
-            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_FOUR)) { insertLetter("4", "$"); }
-            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_FIVE)) { insertLetter("5", "%"); }
-            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_SIX)) { insertLetter("6", "^"); }
-            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_SEVEN)) { insertLetter("7", "&"); }
-            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_EIGHT)) { insertLetter("8", "*"); }
-            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_NINE)) { insertLetter("9", "("); }
-            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_ZERO)) { insertLetter("0", ")"); }
-            //else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_GRAVE)) { insertLetter("`", "~"); } //Backtick closes the terminal, so don't use it
-            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_MINUS)) { insertLetter("-", "_"); }
-            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_EQUAL)) { insertLetter("=", "+"); }
-            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_LEFT_BRACKET)) { insertLetter("[", "{"); }
-            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_RIGHT_BRACKET)) { insertLetter("]", "}"); }
-            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_BACKSLASH)) { insertLetter("\\", "|"); }
-            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_SEMICOLON)) { insertLetter(";", ":"); }
-            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_APOSTROPHE)) { insertLetter("'", "\""); }
-            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_COMMA)) { insertLetter(",", "<"); }
-            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_PERIOD)) { insertLetter(".", ">"); }
-            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_SLASH)) { insertLetter("/", "?"); }
-            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_BACKSPACE) || (Raylib.Raylib.IsKeyDown(KeyboardKey.KEY_BACKSPACE) && ((blinkCounter % 5) == 0)))
+            if (IsKeyPressed(KeyboardKey.KEY_A)) { InsertLetter("A"); }
+            else if (IsKeyPressed(KeyboardKey.KEY_B)) { InsertLetter("B"); }
+            else if (IsKeyPressed(KeyboardKey.KEY_C)) { InsertLetter("C"); }
+            else if (IsKeyPressed(KeyboardKey.KEY_D)) { InsertLetter("D"); }
+            else if (IsKeyPressed(KeyboardKey.KEY_E)) { InsertLetter("E"); }
+            else if (IsKeyPressed(KeyboardKey.KEY_F)) { InsertLetter("F"); }
+            else if (IsKeyPressed(KeyboardKey.KEY_G)) { InsertLetter("G"); }
+            else if (IsKeyPressed(KeyboardKey.KEY_H)) { InsertLetter("H"); }
+            else if (IsKeyPressed(KeyboardKey.KEY_I)) { InsertLetter("I"); }
+            else if (IsKeyPressed(KeyboardKey.KEY_J)) { InsertLetter("J"); }
+            else if (IsKeyPressed(KeyboardKey.KEY_K)) { InsertLetter("K"); }
+            else if (IsKeyPressed(KeyboardKey.KEY_L)) { InsertLetter("L"); }
+            else if (IsKeyPressed(KeyboardKey.KEY_M)) { InsertLetter("M"); }
+            else if (IsKeyPressed(KeyboardKey.KEY_N)) { InsertLetter("N"); }
+            else if (IsKeyPressed(KeyboardKey.KEY_O)) { InsertLetter("O"); }
+            else if (IsKeyPressed(KeyboardKey.KEY_P)) { InsertLetter("P"); }
+            else if (IsKeyPressed(KeyboardKey.KEY_Q)) { InsertLetter("Q"); }
+            else if (IsKeyPressed(KeyboardKey.KEY_R)) { InsertLetter("R"); }
+            else if (IsKeyPressed(KeyboardKey.KEY_S)) { InsertLetter("S"); }
+            else if (IsKeyPressed(KeyboardKey.KEY_T)) { InsertLetter("T"); }
+            else if (IsKeyPressed(KeyboardKey.KEY_U)) { InsertLetter("U"); }
+            else if (IsKeyPressed(KeyboardKey.KEY_V)) { InsertLetter("V"); }
+            else if (IsKeyPressed(KeyboardKey.KEY_W)) { InsertLetter("W"); }
+            else if (IsKeyPressed(KeyboardKey.KEY_X)) { InsertLetter("X"); }
+            else if (IsKeyPressed(KeyboardKey.KEY_Y)) { InsertLetter("Y"); }
+            else if (IsKeyPressed(KeyboardKey.KEY_Z)) { InsertLetter("Z"); }
+            else if (IsKeyPressed(KeyboardKey.KEY_SPACE)) { InsertLetter(" "); }
+            else if (IsKeyPressed(KeyboardKey.KEY_ONE)) { InsertLetter("1", "!"); }
+            else if (IsKeyPressed(KeyboardKey.KEY_TWO)) { InsertLetter("2", "@"); }
+            else if (IsKeyPressed(KeyboardKey.KEY_THREE)) { InsertLetter("3", "#"); }
+            else if (IsKeyPressed(KeyboardKey.KEY_FOUR)) { InsertLetter("4", "$"); }
+            else if (IsKeyPressed(KeyboardKey.KEY_FIVE)) { InsertLetter("5", "%"); }
+            else if (IsKeyPressed(KeyboardKey.KEY_SIX)) { InsertLetter("6", "^"); }
+            else if (IsKeyPressed(KeyboardKey.KEY_SEVEN)) { InsertLetter("7", "&"); }
+            else if (IsKeyPressed(KeyboardKey.KEY_EIGHT)) { InsertLetter("8", "*"); }
+            else if (IsKeyPressed(KeyboardKey.KEY_NINE)) { InsertLetter("9", "("); }
+            else if (IsKeyPressed(KeyboardKey.KEY_ZERO)) { InsertLetter("0", ")"); }
+            //else if (IsKeyPressed(KeyboardKey.KEY_GRAVE)) { insertLetter("`", "~"); } //Backtick closes the terminal, so don't use it
+            else if (IsKeyPressed(KeyboardKey.KEY_MINUS)) { InsertLetter("-", "_"); }
+            else if (IsKeyPressed(KeyboardKey.KEY_EQUAL)) { InsertLetter("=", "+"); }
+            else if (IsKeyPressed(KeyboardKey.KEY_LEFT_BRACKET)) { InsertLetter("[", "{"); }
+            else if (IsKeyPressed(KeyboardKey.KEY_RIGHT_BRACKET)) { InsertLetter("]", "}"); }
+            else if (IsKeyPressed(KeyboardKey.KEY_BACKSLASH)) { InsertLetter("\\", "|"); }
+            else if (IsKeyPressed(KeyboardKey.KEY_SEMICOLON)) { InsertLetter(";", ":"); }
+            else if (IsKeyPressed(KeyboardKey.KEY_APOSTROPHE)) { InsertLetter("'", "\""); }
+            else if (IsKeyPressed(KeyboardKey.KEY_COMMA)) { InsertLetter(",", "<"); }
+            else if (IsKeyPressed(KeyboardKey.KEY_PERIOD)) { InsertLetter(".", ">"); }
+            else if (IsKeyPressed(KeyboardKey.KEY_SLASH)) { InsertLetter("/", "?"); }
+            else if (IsKeyPressed(KeyboardKey.KEY_BACKSPACE) || (IsKeyDown(KeyboardKey.KEY_BACKSPACE) && ((blinkCounter % 5) == 0)))
             {
                 blinkCounter = 0;
                 if (terminalCursor > 0)
                 {
-                    terminalCursor -= 1;
+                    terminalCursor--;
                     terminalBuffer = terminalBuffer.Remove(terminalCursor, 1);
                 }
             }
-            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_DELETE))
+            else if (IsKeyPressed(KeyboardKey.KEY_DELETE))
             {
                 terminalCursor = 0;
                 terminalBuffer = "";
             }
-            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_LEFT) || (Raylib.Raylib.IsKeyDown(KeyboardKey.KEY_LEFT) && ((blinkCounter % 10) == 0)))
+            else if (IsKeyPressed(KeyboardKey.KEY_LEFT) || (IsKeyDown(KeyboardKey.KEY_LEFT) && ((blinkCounter % 10) == 0)))
             {
                 blinkCounter = 0;
                 if (terminalCursor > 0)
                 {
-                    terminalCursor -= 1;
+                    terminalCursor--;
                 }
             }
-            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_RIGHT) || (Raylib.Raylib.IsKeyDown(KeyboardKey.KEY_RIGHT) && ((blinkCounter % 10) == 0)))
+            else if (IsKeyPressed(KeyboardKey.KEY_RIGHT) || (IsKeyDown(KeyboardKey.KEY_RIGHT) && ((blinkCounter % 10) == 0)))
             {
                 blinkCounter = 0;
                 if (terminalCursor < terminalBuffer.Length)
                 {
-                    terminalCursor += 1;
+                    terminalCursor++;
                 }
             }
-            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_ENTER))
+            else if (IsKeyPressed(KeyboardKey.KEY_ENTER))
             {
                 if (!string.IsNullOrWhiteSpace(terminalBuffer))
                 {
@@ -520,12 +534,12 @@ namespace SpaceGame
                 terminalCursor = 0;
                 terminalBuffer = "";
             }
-            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_PAGE_UP))
+            else if (IsKeyPressed(KeyboardKey.KEY_PAGE_UP))
             {
                 consoleLinesOffset += 8;
                 if (consoleLinesOffset > instance.consoleMaxLines - 1) { consoleLinesOffset = instance.consoleMaxLines - 1; }
             }
-            else if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_PAGE_DOWN))
+            else if (IsKeyPressed(KeyboardKey.KEY_PAGE_DOWN))
             {
                 consoleLinesOffset -= 8;
                 if (consoleLinesOffset < 0) { consoleLinesOffset = 0; }
@@ -535,9 +549,9 @@ namespace SpaceGame
             if ((blinkCounter % 30) == 0) { showCursor = !showCursor; }
         }
 
-        private static void insertLetter(string Letter)
+        private static void InsertLetter(string Letter)
         {
-            if (Raylib.Raylib.IsKeyDown(KeyboardKey.KEY_LEFT_SHIFT) || Raylib.Raylib.IsKeyDown(KeyboardKey.KEY_RIGHT_SHIFT))
+            if (IsKeyDown(KeyboardKey.KEY_LEFT_SHIFT) || IsKeyDown(KeyboardKey.KEY_RIGHT_SHIFT))
             {
                 terminalBuffer = terminalBuffer.Insert(terminalCursor, Letter.ToUpperInvariant());
             }
@@ -545,12 +559,12 @@ namespace SpaceGame
             {
                 terminalBuffer = terminalBuffer.Insert(terminalCursor, Letter.ToLower());
             }
-            terminalCursor += 1;
+            terminalCursor++;
         }
 
-        private static void insertLetter(string Letter, string Shifted)
+        private static void InsertLetter(string Letter, string Shifted)
         {
-            if (Raylib.Raylib.IsKeyDown(KeyboardKey.KEY_LEFT_SHIFT) || Raylib.Raylib.IsKeyDown(KeyboardKey.KEY_RIGHT_SHIFT))
+            if (IsKeyDown(KeyboardKey.KEY_LEFT_SHIFT) || IsKeyDown(KeyboardKey.KEY_RIGHT_SHIFT))
             {
                 if (string.IsNullOrEmpty(Shifted)) { return; }
                 terminalBuffer = terminalBuffer.Insert(terminalCursor, Shifted);
@@ -560,7 +574,7 @@ namespace SpaceGame
                 if (string.IsNullOrEmpty(Letter)) { return; }
                 terminalBuffer = terminalBuffer.Insert(terminalCursor, Letter);
             }
-            terminalCursor += 1;
+            terminalCursor++;
         }
 
         public static void ExecuteBatch(string Filename)
@@ -577,6 +591,7 @@ namespace SpaceGame
             }
             if (lines != null)
             {
+                WriteLine("Executing batch file " + Filename);
                 for (int i = 0; i < lines.Length; i++)
                 {
                     if (!string.IsNullOrWhiteSpace(lines[i]))
@@ -659,7 +674,12 @@ namespace SpaceGame
                 SetFlag(arg[0], value);
                 WriteLine(arg[0].ToUpperInvariant() + " = " + GetFlag(arg[0]).ToString());
             }
-            catch { Debug.WriteLine("%ERROR%Failed to parse \"" + arg[1] + "\""); return 1; }
+            catch (FormatException e)
+            {
+                WriteLine("%ERROR%Failed to parse \"" + arg[1] + "\"");
+                WriteLine(e.Message);
+                return 1;
+            }
             return 0;
         }
 
@@ -696,9 +716,10 @@ namespace SpaceGame
                 {
                     echo = int.Parse(arg[0]) >= 1;
                 }
-                catch
+                catch (FormatException e)
                 {
                     WriteLine("%WARNING% Failed to parse ECHO " + arg[0]);
+                    WriteLine(e.Message);
                     return 2;
                 }
             }
@@ -753,92 +774,6 @@ namespace SpaceGame
             Line,
             Circle,
             Rectangle
-        }
-    }
-}
-
-public static class ConsoleUi
-{
-    private static Window leftPane;
-    private static Window rightPane;
-    private static SpaceShipUnit selectedUnit;
-    private static SpaceShip selectedShip;
-
-    public static void Start()
-    {
-        System.ComponentModel.BackgroundWorker debugWorker = new System.ComponentModel.BackgroundWorker();
-        debugWorker.DoWork += DebugWorker_DoWork;
-        debugWorker.RunWorkerAsync();
-    }
-
-    private static void DebugWorker_DoWork(object sender, System.ComponentModel.DoWorkEventArgs e)
-    {
-        ConsoleUi.Run();
-    }
-
-    public static void Run()
-    {
-        Application.Init();
-        var top = Application.Top;
-
-        // Creates the top-level window to show
-        var win = new Window("SpaceGame Debugger")
-        {
-            X = 1,
-            Y = 0, // Leave one row for the toplevel menu
-
-            // By using Dim.Fill(), it will automatically resize without manual intervention
-            Width = Dim.Fill(1),
-            Height = Dim.Fill(1)
-        };
-        top.Add(win);
-
-        leftPane = new Window("Unit")
-        {
-            X = 0,
-            Y = 0,
-            Width = 32,
-            Height = Dim.Fill(0)
-        };
-
-        rightPane = new Window("Ship")
-        {
-            X = 32,
-            Y = 0,
-            Width = Dim.Fill(0),
-            Height = Dim.Fill(0)
-        };
-
-        win.Add(leftPane);
-        win.Add(rightPane);
-
-        Application.Run();
-    }
-
-    private static RadioGroup shipSelector;
-
-    public static void Tick()
-    {
-        if (UiManager.SelectedUnits.Count > 0)
-        {
-            if (UiManager.SelectedUnits[0] != selectedUnit)
-            {
-                selectedUnit = UiManager.SelectedUnits[0];
-
-                leftPane.Clear();
-                string[] labels = new string[selectedUnit.Units.Count];
-                for (int i = 0; i < selectedUnit.Units.Count; i++)
-                {
-                    //leftPane.Add(new Label(new Rect(0, i, 16, 1), selected.Units[i].Texture.Name));
-                    labels[i] = selectedUnit.Units[i].Texture.Name;
-                }
-                shipSelector = new RadioGroup(0, 0, labels, 0);
-                leftPane.Add(shipSelector);
-            }
-        }
-        else
-        {
-            leftPane.Clear();
         }
     }
 }

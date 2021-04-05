@@ -1,6 +1,7 @@
 ﻿using System;
+using System.Numerics;
 
-namespace Raylib
+namespace Raylib_cs
 {
     public static class RaylibVector2Extensions
     {
@@ -10,12 +11,12 @@ namespace Raylib
         // Adding missing raymath functions to the Vector2 class
         public static float Angle(this Vector2 vec)
         {
-            return MathF.Atan2(vec.y, vec.x);
+            return MathF.Atan2(vec.Y, vec.X);
         }
 
-        public static float Angle(this Vector2 vec, Vector2 vector)
+        /*public static float Angle(this Vector2 vec, Vector2 vector)
         {
-            return Raylib.Vector2Angle(vec, vector);
+            return Raylib_cs.Vector2Angle(vec, vector);
         }
 
         public static float DotProduct(this Vector2 vec, Vector2 vector)
@@ -36,11 +37,11 @@ namespace Raylib
         public static Vector2 Lerp(this Vector2 vec, Vector2 vector, float amount)
         {
             return Raylib.Vector2Lerp(vec, vector, amount);
-        }
+        }*/
 
         public static Vector2 Rotate(this Vector2 vec, float rads)
         {
-            Vector2 result = new Vector2(vec.x * MathF.Cos(rads) - vec.y * MathF.Sin(rads), vec.x * MathF.Sin(rads) + vec.y * MathF.Cos(rads));
+            Vector2 result = new Vector2(vec.X * MathF.Cos(rads) - vec.Y * MathF.Sin(rads), vec.X * MathF.Sin(rads) + vec.Y * MathF.Cos(rads));
             return result;
         }
 
@@ -48,7 +49,7 @@ namespace Raylib
         // Things I've found useful
         public static Rectangle ToRectangle(this Vector2 vec)
         {
-            return new Rectangle(0, 0, vec.x, vec.y);
+            return new Rectangle(0, 0, vec.X, vec.Y);
         }
 
         // ============================= Color Extensions ================================

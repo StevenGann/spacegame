@@ -1,4 +1,6 @@
-﻿using Raylib;
+﻿using System.Numerics;
+using Raylib_cs;
+using static Raylib_cs.Raylib;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
@@ -110,16 +112,16 @@ namespace SpaceGame
 
             if (Selected)
             {
-                Raylib.Raylib.DrawCircleLines((int)loc.x, (int)loc.y, Scale * ((Texture.Texture.width + Texture.Texture.height) / 4f) * GameManager.ViewScale, Color.GREEN);
+                DrawCircleLines((int)loc.X, (int)loc.Y, Scale * ((Texture.Texture.width + Texture.Texture.height) / 4f) * GameManager.ViewScale, Color.GREEN);
             }
 
             //Raylib.Raylib.DrawTextureEx(Texture.Texture, RotateAroundPoint(Location - TextureOffset, Location, Angle), (float)Angle, 1.0f, Color.WHITE);
-            Raylib.Raylib.DrawTexturePro(
+            DrawTexturePro(
                 Texture.Texture,
                 new Rectangle(0, 0, Texture.Texture.width, Texture.Texture.height),
                 new Rectangle(
-                    loc.x,
-                    loc.y,
+                    loc.X,
+                    loc.Y,
                     Texture.Texture.width * Scale * GameManager.ViewScale,
                     Texture.Texture.height * Scale * GameManager.ViewScale),
                 TextureOffset * Scale * GameManager.ViewScale,
@@ -131,7 +133,7 @@ namespace SpaceGame
                 drawScript.Draw(this);
             }
 
-            if (Hitbox != null && Debug.Enabled && !Debug.ConsoleIsOpen && Raylib.Raylib.IsKeyDown(KeyboardKey.KEY_F3)) { Hitbox.Draw(loc, (float)(Angle * 0.0174533), GameManager.ViewScale * Scale); }
+            if (Hitbox != null && Debug.Enabled && !Debug.ConsoleIsOpen && IsKeyDown(KeyboardKey.KEY_F3)) { Hitbox.Draw(loc, (float)(Angle * 0.0174533), GameManager.ViewScale * Scale); }
         }
 
         public void SetVar(uint Id, double Value)
@@ -184,7 +186,7 @@ namespace SpaceGame
             {
                 try
                 {
-                    baseObject = SpaceObject.FromXml(ResourceManager.GetXml(baseName), new SpaceObject());
+                    baseObject = SpaceObject.FromXml(ResourceManager.Get<XmlResource>(baseName), new SpaceObject());
                 }
                 catch (KeyNotFoundException e)
                 {
@@ -200,11 +202,11 @@ namespace SpaceGame
             Result.Scale = (float)GetXmlValue(obj, "Scale", baseObject.Scale);
             try
             {
-                Result.Texture = ResourceManager.GetTexture(GetXmlText(obj, "Texture", @"ui\error"));
+                Result.Texture = ResourceManager.Get<TextureResource>(GetXmlText(obj, "Texture", @"images\ui\error"));
             }
             catch (KeyNotFoundException e)
             {
-                Result.Texture = ResourceManager.GetTexture(@"ui\error");
+                Result.Texture = ResourceManager.Get<TextureResource>(@"images\ui\error");
                 Result.Scale = 1;
             }
 
@@ -254,7 +256,7 @@ namespace SpaceGame
                         {
                             if (attribute.Name.ToUpperInvariant() == "source".ToUpperInvariant())
                             {
-                                ScriptResource script = ResourceManager.GetScript(attribute.Value);
+                                ScriptResource script = ResourceManager.Get<ScriptResource>(attribute.Value);
                                 script.Loaded = true;
                                 return script.Script;
                             }
@@ -369,11 +371,11 @@ namespace SpaceGame
             {
                 if (this is SpaceProjectile)
                 {
-                    Raylib.Raylib.DrawCircleV(Location, 1, GameManager.FactionColors[Faction].SetAlpha(32));
+                    DrawCircleV(Location, 1, GameManager.FactionColors[Faction].SetAlpha(32));
                 }
                 else
                 {
-                    Raylib.Raylib.DrawCircleV(Location, MathF.Sqrt(Texture.Texture.width * Scale), GameManager.FactionColors[Faction].SetAlpha(32));
+                    DrawCircleV(Location, MathF.Sqrt(Texture.Texture.width * Scale), GameManager.FactionColors[Faction].SetAlpha(32));
                 }
             }
         }
@@ -411,8 +413,8 @@ namespace SpaceGame
         {
             //Note to self: System.Math operates in Radians
             double angle = (Angle) * (Math.PI / 180); // Convert to radians
-            double rotatedX = Math.Cos(angle) * (Position.x - Center.x) - Math.Sin(angle) * (Position.y - Center.y) + Center.x;
-            double rotatedY = Math.Sin(angle) * (Position.x - Center.x) + Math.Cos(angle) * (Position.y - Center.y) + Center.y;
+            double rotatedX = Math.Cos(angle) * (Position.X - Center.X) - Math.Sin(angle) * (Position.Y - Center.Y) + Center.X;
+            double rotatedY = Math.Sin(angle) * (Position.X - Center.X) + Math.Cos(angle) * (Position.Y - Center.Y) + Center.Y;
             return new Vector2((float)rotatedX, (float)rotatedY);
         }
     }

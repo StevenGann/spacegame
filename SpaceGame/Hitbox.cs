@@ -1,4 +1,6 @@
-﻿using Raylib;
+﻿using System.Numerics;
+using Raylib_cs;
+using static Raylib_cs.Raylib;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -6,8 +8,8 @@ using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Processing;
 using SixLabors.ImageSharp.PixelFormats;
 
-using Color = Raylib.Color;
-using Rectangle = Raylib.Rectangle;
+using Color = Raylib_cs.Color;
+using Rectangle = Raylib_cs.Rectangle;
 
 namespace SpaceGame
 {
@@ -144,7 +146,7 @@ namespace SpaceGame
             {
                 foreach (Triangle tri in Triangles)
                 {
-                    if (Raylib.Raylib.CheckCollisionPointTriangle(
+                    if (CheckCollisionPointTriangle(
                         Point,
                         tri.A.Rotate(Angle) * Scale + Location,
                         tri.B.Rotate(Angle) * Scale + Location,
@@ -157,7 +159,7 @@ namespace SpaceGame
             }
             else
             {
-                return Raylib.Raylib.CheckCollisionPointCircle(Point, Location, Radius * Scale);
+                return CheckCollisionPointCircle(Point, Location, Radius * Scale);
             }
 
             return false;
@@ -169,7 +171,7 @@ namespace SpaceGame
             {
                 if (Radius > 0) // Both are circles
                 {
-                    return Raylib.Raylib.CheckCollisionCircles(OtherLocation, Other.Radius * OtherScale, Location, Radius * Scale);
+                    return CheckCollisionCircles(OtherLocation, Other.Radius * OtherScale, Location, Radius * Scale);
                 }
                 else //I'm a mesh and other is a circle
                 {
@@ -231,19 +233,19 @@ namespace SpaceGame
 
         private static bool CheckCollisionTriangleTriangle(Vector2 a1, Vector2 a2, Vector2 a3, Vector2 b1, Vector2 b2, Vector2 b3)
         {
-            if (Raylib.Raylib.CheckCollisionPointTriangle(a1, b1, b2, b3)) { return true; }
-            if (Raylib.Raylib.CheckCollisionPointTriangle(a2, b1, b2, b3)) { return true; }
-            if (Raylib.Raylib.CheckCollisionPointTriangle(a3, b1, b2, b3)) { return true; }
+            if (CheckCollisionPointTriangle(a1, b1, b2, b3)) { return true; }
+            if (CheckCollisionPointTriangle(a2, b1, b2, b3)) { return true; }
+            if (CheckCollisionPointTriangle(a3, b1, b2, b3)) { return true; }
             return false;
         }
 
         private static bool CheckCollisionCircleTriangle(Vector2 center, float radius, Vector2 p1, Vector2 p2, Vector2 p3)
         {
-            if (Raylib.Raylib.CheckCollisionPointTriangle(center, p1, p2, p3)) { return true; }
-            if (Raylib.Raylib.CheckCollisionPointTriangle(center + Vector2.UnitX * radius, p1, p2, p3)) { return true; }
-            if (Raylib.Raylib.CheckCollisionPointTriangle(center - Vector2.UnitX * radius, p1, p2, p3)) { return true; }
-            if (Raylib.Raylib.CheckCollisionPointTriangle(center + Vector2.UnitY * radius, p1, p2, p3)) { return true; }
-            if (Raylib.Raylib.CheckCollisionPointTriangle(center - Vector2.UnitY * radius, p1, p2, p3)) { return true; }
+            if (CheckCollisionPointTriangle(center, p1, p2, p3)) { return true; }
+            if (CheckCollisionPointTriangle(center + Vector2.UnitX * radius, p1, p2, p3)) { return true; }
+            if (CheckCollisionPointTriangle(center - Vector2.UnitX * radius, p1, p2, p3)) { return true; }
+            if (CheckCollisionPointTriangle(center + Vector2.UnitY * radius, p1, p2, p3)) { return true; }
+            if (CheckCollisionPointTriangle(center - Vector2.UnitY * radius, p1, p2, p3)) { return true; }
             return false;
         }
 
@@ -254,14 +256,14 @@ namespace SpaceGame
             {
                 foreach (Triangle tri in Triangles)
                 {
-                    Raylib.Raylib.DrawLineEx(tri.A.Rotate(Angle) * Scale + Location, tri.B.Rotate(Angle) * Scale + Location, 2.5f, col);
-                    Raylib.Raylib.DrawLineEx(tri.B.Rotate(Angle) * Scale + Location, tri.C.Rotate(Angle) * Scale + Location, 2.5f, col);
-                    Raylib.Raylib.DrawLineEx(tri.C.Rotate(Angle) * Scale + Location, tri.A.Rotate(Angle) * Scale + Location, 2.5f, col);
+                    DrawLineEx(tri.A.Rotate(Angle) * Scale + Location, tri.B.Rotate(Angle) * Scale + Location, 2.5f, col);
+                    DrawLineEx(tri.B.Rotate(Angle) * Scale + Location, tri.C.Rotate(Angle) * Scale + Location, 2.5f, col);
+                    DrawLineEx(tri.C.Rotate(Angle) * Scale + Location, tri.A.Rotate(Angle) * Scale + Location, 2.5f, col);
                 }
             }
             else
             {
-                Raylib.Raylib.DrawCircleLines((int)Location.x, (int)Location.y, Radius * Scale, col);
+                DrawCircleLines((int)Location.X, (int)Location.Y, Radius * Scale, col);
             }
         }
     }
@@ -277,9 +279,9 @@ namespace SpaceGame
             if (obj is Triangle)
             {
                 Triangle o = (Triangle)obj;
-                return A.x == o.A.x && A.y == o.A.y &&
-                       B.x == o.B.x && B.y == o.B.y &&
-                       C.x == o.C.x && C.y == o.C.y;
+                return A.X == o.A.X && A.Y == o.A.Y &&
+                       B.X == o.B.X && B.Y == o.B.Y &&
+                       C.X == o.C.X && C.Y == o.C.Y;
             }
             else return base.Equals(obj);
         }
@@ -292,9 +294,9 @@ namespace SpaceGame
         public override string ToString()
         {
 #pragma warning disable CA1305 // Specify IFormatProvider
-            return "[(" + A.x.ToString("N1") + "," + A.y.ToString("N1") +
-                ") (" + B.x.ToString("N1") + "," + B.y.ToString("N1") +
-                ") (" + C.x.ToString("N1") + "," + C.y.ToString("N1") + ")]";
+            return "[(" + A.X.ToString("N1") + "," + A.Y.ToString("N1") +
+                ") (" + B.X.ToString("N1") + "," + B.Y.ToString("N1") +
+                ") (" + C.X.ToString("N1") + "," + C.Y.ToString("N1") + ")]";
 #pragma warning restore CA1305 // Specify IFormatProvider
         }
     }

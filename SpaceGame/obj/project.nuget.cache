@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "pxFBLmE6qQ1Lc9Xk7Mogk9H+gZshCK627QVSfZ6rE9xzIQL40V1rOmS5j8uF8BvnM7TW9yn0QR0NoeGrsLt2ww==",
+  "dgSpecHash": "qF2leCqemIC8rXbAwm00DgECjZX+m7T8jx/6VBsineaS7S4+e/AIOt3DVy+UjLc5Dzw/gAyy3YKXACaR6ADikA==",
   "success": true,
   "projectFilePath": "C:\\Users\\cadik\\Documents\\GitHub\\spacegame\\SpaceGame\\SpaceGame.csproj",
   "expectedPackageFiles": [
@@ -9,19 +9,13 @@
     "C:\\Users\\cadik\\.nuget\\packages\\microsoft.codeanalysis.common\\3.4.0\\microsoft.codeanalysis.common.3.4.0.nupkg.sha512",
     "C:\\Users\\cadik\\.nuget\\packages\\microsoft.codeanalysis.csharp\\3.4.0\\microsoft.codeanalysis.csharp.3.4.0.nupkg.sha512",
     "C:\\Users\\cadik\\.nuget\\packages\\microsoft.codeanalysis.csharp.scripting\\3.4.0\\microsoft.codeanalysis.csharp.scripting.3.4.0.nupkg.sha512",
-    "C:\\Users\\cadik\\.nuget\\packages\\microsoft.codeanalysis.fxcopanalyzers\\3.0.0\\microsoft.codeanalysis.fxcopanalyzers.3.0.0.nupkg.sha512",
     "C:\\Users\\cadik\\.nuget\\packages\\microsoft.codeanalysis.scripting.common\\3.4.0\\microsoft.codeanalysis.scripting.common.3.4.0.nupkg.sha512",
-    "C:\\Users\\cadik\\.nuget\\packages\\microsoft.codeanalysis.versioncheckanalyzer\\3.0.0\\microsoft.codeanalysis.versioncheckanalyzer.3.0.0.nupkg.sha512",
-    "C:\\Users\\cadik\\.nuget\\packages\\microsoft.codequality.analyzers\\3.0.0\\microsoft.codequality.analyzers.3.0.0.nupkg.sha512",
     "C:\\Users\\cadik\\.nuget\\packages\\microsoft.csharp\\4.3.0\\microsoft.csharp.4.3.0.nupkg.sha512",
     "C:\\Users\\cadik\\.nuget\\packages\\microsoft.extensions.dependencymodel\\3.1.2\\microsoft.extensions.dependencymodel.3.1.2.nupkg.sha512",
-    "C:\\Users\\cadik\\.nuget\\packages\\microsoft.netcore.analyzers\\3.0.0\\microsoft.netcore.analyzers.3.0.0.nupkg.sha512",
     "C:\\Users\\cadik\\.nuget\\packages\\microsoft.netcore.platforms\\2.1.2\\microsoft.netcore.platforms.2.1.2.nupkg.sha512",
     "C:\\Users\\cadik\\.nuget\\packages\\microsoft.netcore.targets\\1.1.0\\microsoft.netcore.targets.1.1.0.nupkg.sha512",
-    "C:\\Users\\cadik\\.nuget\\packages\\microsoft.netframework.analyzers\\3.0.0\\microsoft.netframework.analyzers.3.0.0.nupkg.sha512",
-    "C:\\Users\\cadik\\.nuget\\packages\\nstack.core\\0.14.0\\nstack.core.0.14.0.nupkg.sha512",
-    "C:\\Users\\cadik\\.nuget\\packages\\raylib.net.x64\\1.0.0\\raylib.net.x64.1.0.0.nupkg.sha512",
     "C:\\Users\\cadik\\.nuget\\packages\\sharpnoise\\0.12.1.1\\sharpnoise.0.12.1.1.nupkg.sha512",
+    "C:\\Users\\cadik\\.nuget\\packages\\sharpziplib\\1.2.0\\sharpziplib.1.2.0.nupkg.sha512",
     "C:\\Users\\cadik\\.nuget\\packages\\sixlabors.imagesharp\\1.0.0-rc0001\\sixlabors.imagesharp.1.0.0-rc0001.nupkg.sha512",
     "C:\\Users\\cadik\\.nuget\\packages\\system.collections\\4.3.0\\system.collections.4.3.0.nupkg.sha512",
     "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder\\system.collections.immutable\\1.5.0\\system.collections.immutable.1.5.0.nupkg.sha512",
@@ -32,6 +26,7 @@
     "C:\\Users\\cadik\\.nuget\\packages\\system.linq\\4.3.0\\system.linq.4.3.0.nupkg.sha512",
     "C:\\Users\\cadik\\.nuget\\packages\\system.linq.expressions\\4.3.0\\system.linq.expressions.4.3.0.nupkg.sha512",
     "C:\\Users\\cadik\\.nuget\\packages\\system.memory\\4.5.3\\system.memory.4.5.3.nupkg.sha512",
+    "C:\\Users\\cadik\\.nuget\\packages\\system.numerics.vectors\\4.5.0\\system.numerics.vectors.4.5.0.nupkg.sha512",
     "C:\\Users\\cadik\\.nuget\\packages\\system.objectmodel\\4.3.0\\system.objectmodel.4.3.0.nupkg.sha512",
     "C:\\Users\\cadik\\.nuget\\packages\\system.reflection\\4.3.0\\system.reflection.4.3.0.nupkg.sha512",
     "C:\\Users\\cadik\\.nuget\\packages\\system.reflection.emit\\4.3.0\\system.reflection.emit.4.3.0.nupkg.sha512",
@@ -53,19 +48,7 @@
     "C:\\Users\\cadik\\.nuget\\packages\\system.text.json\\4.7.1\\system.text.json.4.7.1.nupkg.sha512",
     "C:\\Users\\cadik\\.nuget\\packages\\system.threading\\4.3.0\\system.threading.4.3.0.nupkg.sha512",
     "C:\\Users\\cadik\\.nuget\\packages\\system.threading.tasks\\4.3.0\\system.threading.tasks.4.3.0.nupkg.sha512",
-    "C:\\Users\\cadik\\.nuget\\packages\\system.threading.tasks.extensions\\4.5.3\\system.threading.tasks.extensions.4.5.3.nupkg.sha512",
-    "C:\\Users\\cadik\\.nuget\\packages\\terminal.gui\\0.81.0\\terminal.gui.0.81.0.nupkg.sha512"
+    "C:\\Users\\cadik\\.nuget\\packages\\system.threading.tasks.extensions\\4.5.3\\system.threading.tasks.extensions.4.5.3.nupkg.sha512"
   ],
-  "logs": [
-    {
-      "code": "NU1701",
-      "level": "Warning",
-      "warningLevel": 1,
-      "message": "Package 'RayLib.NET.x64 1.0.0' was restored using '.NETFramework,Version=v4.6.1, .NETFramework,Version=v4.6.2, .NETFramework,Version=v4.7, .NETFramework,Version=v4.7.1, .NETFramework,Version=v4.7.2, .NETFramework,Version=v4.8' instead of the project target framework '.NETCoreApp,Version=v3.1'. This package may not be fully compatible with your project.",
-      "libraryId": "RayLib.NET.x64",
-      "targetGraphs": [
-        ".NETCoreApp,Version=v3.1"
-      ]
-    }
-  ]
+  "logs": []
 }

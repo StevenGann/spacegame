@@ -1,0 +1,9 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<spaceship base="xml\ship\base_fighter">
+  <texture>images\ship\barb</texture>
+  <tick source="scripts\test_fighter" />
+  <draw source="scripts\test_fighter" />
+  <spawn source="scripts\test_fighter" />
+  <destroy source="scripts\test_fighter" />
+  <maxthrust>**2.0</maxthrust>
+</spaceship>

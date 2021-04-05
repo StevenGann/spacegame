@@ -10,3 +10,4 @@ SET DangerousScripts 1
 
 REM Debug
 SET force_gc 0
+SET EditorPort 1000

@@ -1,0 +1,15 @@
+*.manifest
+.vs/*
+Docs/html/*
+Docs/latex/*
+Docs/rtf/*
+*/bin/*
+*/Debug/*
+*/Release/*
+*/obj/*
+*.nuget.*
+*.exe
+*.dll
+*.pdb
+*.cache1
+*/netcoreapp3.1/*

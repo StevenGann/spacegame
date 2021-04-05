@@ -1,4 +1,6 @@
-﻿using Raylib;
+﻿using System.Numerics;
+using Raylib_cs;
+using static Raylib_cs.Raylib;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -9,7 +11,7 @@ namespace SpaceGame
     public class SpaceShipUnit
     {
         public List<SpaceShip> Units { get; } = new List<SpaceShip>();
-        public TextureResource UiImage { get; set; } = ResourceManager.GetTexture(@"thumbnail\unknown");
+        public TextureResource UiImage { get; set; } = ResourceManager.Get<TextureResource>(@"images\thumbnail\unknown");
         public Formation Formation = null;
 
         public SpaceShip Leader
@@ -160,14 +162,14 @@ namespace SpaceGame
 
                 if (Selected)
                 {
-                    Raylib.Raylib.DrawCircle((int)loc.x, (int)loc.y, 10f, col);
-                    Raylib.Raylib.DrawCircleLines((int)loc.x, (int)loc.y, 10f, col);
+                    DrawCircle((int)loc.X, (int)loc.Y, 10f, col);
+                    DrawCircleLines((int)loc.X, (int)loc.Y, 10f, col);
                     bool pruneFlag = false;
                     foreach (SpaceShip unit in Units)
                     {
                         if (unit.Active)
                         {
-                            Raylib.Raylib.DrawLineEx(loc, unit.DrawLocation, 2.5f, col);
+                            DrawLineEx(loc, unit.DrawLocation, 2.5f, col);
                         }
                         else
                         {
@@ -212,7 +214,7 @@ namespace SpaceGame
             {
                 try
                 {
-                    baseObject = SpaceShipUnit.FromXml(ResourceManager.GetXml(baseName), null);
+                    baseObject = SpaceShipUnit.FromXml(ResourceManager.Get<XmlResource>(baseName), null);
                 }
                 catch (KeyNotFoundException e)
                 {
@@ -235,7 +237,7 @@ namespace SpaceGame
                 }
             }
 
-            Result.UiImage = ResourceManager.GetTexture(GetXmlText(obj, "image", baseObject.UiImage.Name));
+            Result.UiImage = ResourceManager.Get<TextureResource>(GetXmlText(obj, "image", baseObject.UiImage.Name));
 
             return Result;
         }

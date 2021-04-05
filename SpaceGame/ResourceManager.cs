@@ -1,154 +1,230 @@
-﻿using System;
+﻿/*
+ * Copyright (c) 2020 Orade Technologies, LLC
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+using ICSharpCode.SharpZipLib.Core;
+using ICSharpCode.SharpZipLib.Zip;
+using Raylib_cs;
+using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
-using System.Text;
-using System.Xml;
+using static Raylib_cs.Raylib;
 
 namespace SpaceGame
 {
-    public class ResourceManager
+    public static class ResourceManager
     {
-        public static ResourceManager Instance { get; set; } = null;
-        public Dictionary<string, TextureResource> Textures = new Dictionary<string, TextureResource>();
-        public Dictionary<string, XmlResource> Xml = new Dictionary<string, XmlResource>();
-        public Dictionary<string, FontResource> Fonts = new Dictionary<string, FontResource>();
-        public Dictionary<string, SoundResource> Sounds = new Dictionary<string, SoundResource>();
-        public Dictionary<string, ScriptResource> Scripts = new Dictionary<string, ScriptResource>();
-        private static string imagesFolder = @"images\";
-        private static string xmlFolder = @"xml\";
-        private static string fontsFolder = @"fonts\";
-        private static string soundsFolder = @"sounds\";
-        private static string scriptsFolder = @"scripts\";
+        public static string cacheDirectory = @"..\cache\";
+
+        private static Dictionary<Type, string[]> RegisteredTypes = new Dictionary<Type, string[]>()
+        {
+            {typeof(FontResource), new string[]{".ttf"} },
+            {typeof(SoundResource), new string[]{".wav", ".mp3", ".ogg"} },
+            {typeof(TextureResource),new string[]{".png", ".jpg", ".bmp"} },
+        };
+
+        private static Dictionary<Type, Dictionary<string, IResource>> Resources = new Dictionary<Type, Dictionary<string, IResource>>();
         private static string tempPath = "";
 
-        public static TextureResource GetTexture(string Id)
+        /// <summary>
+        /// Unloads resources that are not currently being used.
+        /// Invoke periodically but ONLY when you are certain no other parts of the program are actively using the resources.
+        /// Currently only supports the TextureResource type.
+        /// </summary>
+        public static void Cull()
         {
-            if (Instance.Textures.ContainsKey(Id.ToUpperInvariant()))
+            foreach (KeyValuePair<string, IResource> kvp in Resources[typeof(TextureResource)])
             {
-                Instance.Textures[Id.ToUpperInvariant()].Users++;
-                return Instance.Textures[Id.ToUpperInvariant()];
+                if (kvp.Value is TextureResource && kvp.Value.Loaded && kvp.Value.Users <= 0)
+                {
+                    //Debug.WriteLine("Unloading " + kvp.Value.Name);
+                    Console.WriteLine("Unloading " + kvp.Value.Name);
+                    kvp.Value.Loaded = false;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Fetches an IResource object of the specified ID, if found.
+        /// The ID is case-insensetive.
+        /// </summary>
+        /// <typeparam name="T">Type of resource, must implement IResource</typeparam>
+        /// <param name="Id">The resource's directory relative to the base search path, extension removed and sanitized of special characters.</param>
+        /// <returns>Desired resource, if found.</returns>
+        public static T Get<T>(string Id) where T : class, IResource
+        {
+            Dictionary<string, IResource> dict = null;
+            if (Resources.ContainsKey(typeof(T)))
+            {
+                dict = Resources[typeof(T)];
+            }
+
+            if (dict?.ContainsKey(Id.ToUpperInvariant()) == true)
+            {
+                dict[Id.ToUpperInvariant()].Users++;
+                T result = dict[Id.ToUpperInvariant()] as T;
+                return result;
             }
             else
             {
-                string message = "Cannot find TextureResource " + Id.ToUpperInvariant();
+                string message = "Cannot find " + typeof(T) + " " + Id.ToUpperInvariant();
 #if DEBUG
                 throw new KeyNotFoundException(message);
 #else
                 Debug.WriteLine(message);
+                //Console.WriteLine(message);
                 return null;
 #endif
             }
         }
 
-        public static XmlResource GetXml(string Id)
-        {
-            if (Instance.Xml.ContainsKey(Id.ToUpperInvariant()))
-            {
-                Instance.Xml[Id.ToUpperInvariant()].Users++;
-                return Instance.Xml[Id.ToUpperInvariant()];
-            }
-            else
-            {
-                string message = "Cannot find XmlResource " + Id.ToUpperInvariant();
-#if DEBUG
-                throw new KeyNotFoundException(message);
-#else
-                Debug.WriteLine(message);
-                return null;
-#endif
-            }
-        }
-
-        public static FontResource GetFont(string Id)
-        {
-            if (Instance.Fonts.ContainsKey(Id.ToUpperInvariant()))
-            {
-                Instance.Fonts[Id.ToUpperInvariant()].Users++;
-                return Instance.Fonts[Id.ToUpperInvariant()];
-            }
-            else
-            {
-                string message = "Cannot find FontResource " + Id.ToUpperInvariant();
-#if DEBUG
-                throw new KeyNotFoundException(message);
-#else
-                Debug.WriteLine(message);
-                return null;
-#endif
-            }
-        }
-
-        public static SoundResource GetSound(string Id)
-        {
-            if (Instance.Sounds.ContainsKey(Id.ToUpperInvariant()))
-            {
-                Instance.Sounds[Id.ToUpperInvariant()].Users++;
-                return Instance.Sounds[Id.ToUpperInvariant()];
-            }
-            else
-            {
-                string message = "Cannot find SoundResource " + Id.ToUpperInvariant();
-#if DEBUG
-                throw new KeyNotFoundException(message);
-#else
-                Debug.WriteLine(message);
-                return null;
-#endif
-            }
-        }
-
-        public static ScriptResource GetScript(string Id)
-        {
-            if (Instance.Scripts.ContainsKey(Id.ToUpperInvariant()))
-            {
-                Instance.Scripts[Id.ToUpperInvariant()].Users++;
-                return Instance.Scripts[Id.ToUpperInvariant()];
-            }
-            else
-            {
-                string message = "Cannot find ScriptResource " + Id.ToUpperInvariant();
-#if DEBUG
-                throw new KeyNotFoundException(message);
-#else
-                Debug.WriteLine(message);
-                return null;
-#endif
-            }
-        }
-
+        /// <summary>
+        /// Iterates over every subdirectory and file, recursively, in the specified path and catalogues any recognized resource it finds.
+        /// Note that these resources are not actually loaded at this time, but lazy-loaded when they are requested later.
+        /// </summary>
+        /// <param name="BasePath">Path to begin searching from.</param>
         public static void Load(string BasePath)
         {
-            Instantiate();
-            Debug.WriteLine("Loading XML...");
-            tempPath = BasePath + xmlFolder;
-            ProcessDirectory(tempPath, ".xml", typeof(XmlResource));
+            if (Directory.Exists(Path.GetFullPath(cacheDirectory)))
+            {
+                Directory.Delete(Path.GetFullPath(cacheDirectory), true);
+            }
 
-            Debug.WriteLine("Loading Fonts...");
-            tempPath = BasePath + fontsFolder;
-            ProcessDirectory(tempPath, ".ttf", typeof(FontResource));
+            LoadArchives(BasePath, ".zip");
 
-            Debug.WriteLine("Loading Sounds...");
-            tempPath = BasePath + soundsFolder;
-            ProcessDirectory(tempPath, ".wav", typeof(SoundResource));
-            ProcessDirectory(tempPath, ".mp3", typeof(SoundResource));
-            ProcessDirectory(tempPath, ".ogg", typeof(SoundResource));
-
-            Debug.WriteLine("Loading Scripts...");
-            tempPath = BasePath + scriptsFolder;
-            ProcessDirectory(tempPath, ".cs", typeof(ScriptResource));
-
-            Debug.WriteLine("Loading Textures...");
-            tempPath = BasePath + imagesFolder;
-            ProcessDirectory(tempPath, ".png", typeof(TextureResource));
-            ProcessDirectory(tempPath, ".jpg", typeof(TextureResource));
+            foreach (KeyValuePair<Type, string[]> rt in RegisteredTypes)
+            {
+                foreach (string extension in rt.Value)
+                {
+                    tempPath = BasePath;
+                    ProcessDirectory(BasePath, extension, rt.Key);
+                }
+            }
         }
 
-        public static void Instantiate()
+        public static void LoadArchives(string BasePath, string ArchiveExtension)
         {
-            if (Instance == null)
+            string[] fileEntries = System.IO.Directory.GetFiles(BasePath);
+            foreach (string fileName in fileEntries)
             {
-                Instance = new ResourceManager();
+                if (string.Equals(System.IO.Path.GetExtension(fileName), ArchiveExtension, StringComparison.InvariantCultureIgnoreCase))
+                {
+                    Debug.WriteLine("Found resource archive: " + fileName[BasePath.Length..]);
+
+                    using ZipFile zf = new ZipFile(fileName);
+                    foreach (ZipEntry zipEntry in zf)
+                    {
+                        foreach (KeyValuePair<Type, string[]> rt in RegisteredTypes)
+                        {
+                            foreach (string extension in rt.Value)
+                            {
+                                if (zipEntry.Name.EndsWith(extension, StringComparison.InvariantCultureIgnoreCase))
+                                {
+                                    Debug.WriteLine(zipEntry.Name);
+                                    string fn = zipEntry.Name.ToUpperInvariant();
+                                    fn = fn.Substring(0, fn.Length - extension.Length);
+                                    fn = fn.Replace('/', '\\');
+                                    Debug.WriteLine("Indexed " + rt.Key.Name + " from archive: " + fn);
+                                    //Console.WriteLine("Name: " + fn);
+
+                                    IResource resource = rt.Key.GetConstructor(Type.EmptyTypes).Invoke(null) as IResource;
+                                    if (!Resources.ContainsKey(rt.Key))
+                                    {
+                                        Resources.Add(rt.Key, new Dictionary<string, IResource>());
+                                    }
+                                    Dictionary<string, IResource> dict = Resources[rt.Key];
+                                    resource.Name = fn;
+                                    resource.Path = "ZIP{" + fileName + "}" + zipEntry.Name.Replace('/', '\\');
+                                    dict[fn] = resource;
+                                }
+                            }
+                        }
+                    }
+                }
             }
+        }
+
+        public static string GetRealPath(string ResourcePath)
+        {
+            if (!(ResourcePath.Contains('{') && ResourcePath.Contains('}')))
+            {
+                return ResourcePath;
+            }
+            else
+            {
+                string[] segments = ResourcePath.Split(new char[] { '{', '}' });
+                if (segments[0] == "ZIP")
+                {
+                    string zipPath = segments[1];
+                    string assetPath = segments[2];
+
+                    string cachedPath = Path.GetFullPath(cacheDirectory + assetPath);
+
+                    if (!File.Exists(cachedPath))
+                    {
+                        using ZipFile zf = new ZipFile(zipPath);
+                        foreach (ZipEntry zipEntry in zf)
+                        {
+                            if (assetPath == zipEntry.Name.Replace('/', '\\'))
+                            {
+                                Directory.CreateDirectory(Path.GetDirectoryName(cachedPath));
+                                var buffer = new byte[4096];
+                                using var zipStream = zf.GetInputStream(zipEntry);
+                                using Stream fsOutput = File.Create(cachedPath);
+                                StreamUtils.Copy(zipStream, fsOutput, buffer);
+                            }
+                        }
+                    }
+                    return cachedPath;
+                }
+            }
+
+            throw new NotSupportedException("Resource source not recognized");
+        }
+
+        /*
+
+         */
+
+        /// <summary>
+        /// Register a resource type and the file extensions it may include.
+        /// The specified Type must implement the IResource interface
+        /// </summary>
+        /// <param name="Type">Type of resource, must implement IResource</param>
+        /// <param name="Extensions">Array containing all file extensions this resource type may have, including the ".", i.e. ".bmp" or ".xml". Case insensetive.</param>
+        public static void Register(Type Type, string[] Extensions)
+        {
+            if (!Type.GetInterfaces().Contains(typeof(IResource)))
+            {
+                string message = Type.Name + " must implement IResource";
+#if DEBUG
+                throw new KeyNotFoundException(message);
+#else
+                Debug.WriteLine(message);
+                return;
+#endif
+            }
+
+            RegisteredTypes[Type] = Extensions;
         }
 
         private static void ProcessDirectory(string TargetDirectory, string Extension, Type AssetType)
@@ -159,55 +235,20 @@ namespace SpaceGame
             {
                 if (string.Equals(System.IO.Path.GetExtension(fileName), Extension, StringComparison.InvariantCultureIgnoreCase))
                 {
-                    string fn = fileName.Substring(tempPath.Length, fileName.Length - tempPath.Length).ToUpperInvariant();
+                    string fn = fileName[tempPath.Length..].ToUpperInvariant();
                     fn = fn.Substring(0, fn.Length - Extension.Length);
-                    Debug.WriteLine("Name: " + fn);
+                    Debug.WriteLine("Indexed " + AssetType.Name + ": " + fn);
+                    //Console.WriteLine("Name: " + fn);
 
-                    if (AssetType == typeof(TextureResource))
+                    IResource resource = AssetType.GetConstructor(Type.EmptyTypes).Invoke(null) as IResource;
+                    if (!Resources.ContainsKey(AssetType))
                     {
-                        TextureResource r = new TextureResource()
-                        {
-                            Name = fn,
-                            Path = fileName,
-                        };
-                        Instance.Textures.Add(r.Name, r);
+                        Resources.Add(AssetType, new Dictionary<string, IResource>());
                     }
-                    else if (AssetType == typeof(XmlResource))
-                    {
-                        XmlResource r = new XmlResource()
-                        {
-                            Name = fn,
-                            Path = fileName,
-                        };
-                        Instance.Xml.Add(r.Name, r);
-                    }
-                    else if (AssetType == typeof(FontResource))
-                    {
-                        FontResource r = new FontResource()
-                        {
-                            Name = fn,
-                            Path = fileName,
-                        };
-                        Instance.Fonts.Add(r.Name, r);
-                    }
-                    else if (AssetType == typeof(SoundResource))
-                    {
-                        SoundResource r = new SoundResource()
-                        {
-                            Name = fn,
-                            Path = fileName,
-                        };
-                        Instance.Sounds.Add(r.Name, r);
-                    }
-                    else if (AssetType == typeof(ScriptResource))
-                    {
-                        ScriptResource r = new ScriptResource()
-                        {
-                            Name = fn,
-                            Path = fileName,
-                        };
-                        Instance.Scripts.Add(r.Name, r);
-                    }
+                    Dictionary<string, IResource> dict = Resources[AssetType];
+                    resource.Name = fn;
+                    resource.Path = fileName;
+                    dict[fn] = resource;
                 }
             }
 
@@ -220,172 +261,19 @@ namespace SpaceGame
             }
         }
 
-        public static void Cull()
+        private struct ResourceType
         {
-            /*foreach (KeyValuePair<string, TextureResource> kvp in Instance.Textures)
-            {
-                if (kvp.Value.Loaded && kvp.Value.Users <= 0)
-                {
-                    Debug.WriteLine("Unloading " + kvp.Value.Name);
-                    kvp.Value.Loaded = false;
-                }
-            }*/
-        }
-    }
-
-    public class TextureResource : IResource
-    {
-        public string Name { get; set; }
-        public string Path { get; set; }
-        public int Users { get; set; }
-        private Raylib.Texture2D texture;
-        private bool loaded = false;
-
-        public bool Loaded
-        {
-            get { return loaded; }
-            set
-            {
-                if (value)
-                {
-                    texture = Raylib.Raylib.LoadTexture(Path);
-                    Raylib.Raylib.SetTextureFilter(texture, Raylib.TextureFilterMode.FILTER_POINT);
-                    Raylib.Raylib.GenTextureMipmaps(ref texture);
-                }
-                else
-                {
-                    Raylib.Raylib.UnloadTexture(texture);
-                }
-                loaded = value;
-            }
-        }
-
-        public Raylib.Texture2D Texture
-        {
-            get
-            {
-                if (!Loaded) { Loaded = true; }
-                return texture;
-            }
-            set
-            {
-                loaded = true;
-                texture = value;
-            }
-        }
-    }
-
-    public class SoundResource : IResource
-    {
-        public string Name { get; set; }
-        public string Path { get; set; }
-        public int Users { get; set; }
-        private bool loaded = false;
-        private Raylib.Sound sound;
-
-        public bool Loaded
-        {
-            get { return loaded; }
-            set
-            {
-                if (value)
-                {
-                    sound = Raylib.Raylib.LoadSound(Path);
-                }
-                else
-                {
-                }
-                loaded = value;
-            }
-        }
-
-        public Raylib.Sound Sound
-        {
-            get
-            {
-                if (!Loaded) { Loaded = true; }
-                return sound;
-            }
-            set
-            {
-                loaded = true;
-                sound = value;
-            }
-        }
-    }
-
-    public class XmlResource : IResource
-    {
-        public string Name { get; set; }
-        public string Path { get; set; }
-        public int Users { get; set; }
-        private bool loaded = false;
-        private XmlDocument xml = null;
-
-        public bool Loaded
-        {
-            get { return loaded; }
-            set
-            {
-                if (value)
-                {
-                    xml = new XmlDocument();
-                    xml.Load(Path);
-                    loaded = true;
-                }
-                else
-                {
-                    xml = null;
-                }
-                loaded = value;
-            }
-        }
-
-        public XmlDocument Xml
-        {
-            get
-            {
-                if (!Loaded)
-                {
-                    Loaded = true;
-                }
-                return xml;
-            }
-            set
-            {
-                xml = value;
-                loaded = true;
-            }
+            public string[] Extensions { get; set; }
+            public Type Type { get; set; }
         }
     }
 
     public class FontResource : IResource
     {
-        public string Name { get; set; }
-        public string Path { get; set; }
-        public int Users { get; set; }
+        private Font font = default;
         private bool loaded = false;
-        private Raylib.Font font = default;
 
-        public bool Loaded
-        {
-            get { return loaded; }
-            set
-            {
-                if (value)
-                {
-                    font = Raylib.Raylib.LoadFont(Path);
-                    loaded = true;
-                }
-                else
-                {
-                    font = default;
-                }
-                loaded = value;
-            }
-        }
-
-        public Raylib.Font Font
+        public Font Font
         {
             get
             {
@@ -401,29 +289,6 @@ namespace SpaceGame
                 loaded = true;
             }
         }
-    }
-
-    public class ScriptResource : IResource
-    {
-        public string Name { get; set; }
-        public string Path { get; set; }
-        public bool Error { get => error; }
-
-        public string Text
-        {
-            get
-            {
-                //if (!loaded) { loaded = true; }
-                scriptText = System.IO.File.ReadAllText(Path);
-                return scriptText;
-            }
-        }
-
-        public int Users { get; set; }
-        private bool loaded = false;
-        private dynamic script = null;
-        private string scriptText = "";
-        private bool error = false;
 
         public bool Loaded
         {
@@ -432,73 +297,149 @@ namespace SpaceGame
             {
                 if (value)
                 {
-                    if (!loaded && !error)
-                    {
-                        if (string.IsNullOrWhiteSpace(scriptText))
-                        {
-                            scriptText = System.IO.File.ReadAllText(Path);
-                        }
-                        if (scriptText != string.Empty)
-                        {
-                            var watch = System.Diagnostics.Stopwatch.StartNew();
-
-                            if (Debug.GetFlag("DangerousScripts") != 1)
-                            {
-                                List<string> blacklist = GameManager.ScriptBlacklist;
-                                foreach (string s in blacklist)
-                                {
-                                    if (scriptText.Contains(s))
-                                    {
-                                        watch.Stop();
-                                        Debug.WriteLine("%WARNING%Did not compile script because it contained \"" + s + "\" and DangerousScripts cvar is disabled.");
-                                        Debug.WriteLine("%WARNING%If you trust this script, use \"SET DANGEROUSSCRIPTS 1\" in the console or config file.");
-                                        script = null;
-                                    }
-                                }
-                            }
-                            string scriptHeader = @"using System; using SpaceGame;";
-                            try
-                            {
-                                script = CSScriptLib.CSScript.Evaluator.LoadMethod(scriptHeader + "\n" + scriptText);
-                                watch.Stop();
-                                Debug.WriteLine("%SUCCESS%Compiled script in " + watch.ElapsedMilliseconds + "ms");
-                            }
-                            catch (Exception e)
-                            {
-                                watch.Stop();
-                                Debug.WriteLine("%ERROR%Script compilation error. " + e.Message);
-                                loaded = false;
-                                error = true;
-                                return;
-                            }
-                        }
-
-                        loaded = true;
-                    }
+                    font = LoadFont(Path);
+                    loaded = true;
                 }
                 else
                 {
-                    script = null;
+                    font = default;
                 }
                 loaded = value;
             }
         }
 
-        public dynamic Script
+        public string Name { get; set; }
+
+        public string Path
         {
             get
             {
-                if (!Loaded)
+                return ResourceManager.GetRealPath(path);
+            }
+            set { path = value; }
+        }
+
+        private string path;
+        public int Users { get; set; }
+
+        public override string ToString()
+        {
+            return Name;
+        }
+    }
+
+    public class SoundResource : IResource
+    {
+        private bool loaded = false;
+        private Sound sound;
+
+        public bool Loaded
+        {
+            get { return loaded; }
+            set
+            {
+                if (value)
                 {
-                    Loaded = true;
+                    sound = LoadSound(Path);
                 }
-                return script;
+                else
+                {
+                }
+                loaded = value;
+            }
+        }
+
+        public string Name { get; set; }
+
+        public string Path
+        {
+            get
+            {
+                return ResourceManager.GetRealPath(path);
+            }
+            set { path = value; }
+        }
+
+        private string path;
+
+        public Sound Sound
+        {
+            get
+            {
+                if (!Loaded) { Loaded = true; }
+                return sound;
             }
             set
             {
-                script = value;
                 loaded = true;
+                sound = value;
             }
+        }
+
+        public int Users { get; set; }
+
+        public override string ToString()
+        {
+            return Name;
+        }
+    }
+
+    public class TextureResource : IResource
+    {
+        private bool loaded = false;
+        private Texture2D texture;
+
+        public bool Loaded
+        {
+            get { return loaded; }
+            set
+            {
+                if (value)
+                {
+                    texture = LoadTexture(Path);
+                    SetTextureFilter(texture, TextureFilterMode.FILTER_POINT);
+                    GenTextureMipmaps(ref texture);
+                }
+                else
+                {
+                    UnloadTexture(texture);
+                }
+                loaded = value;
+            }
+        }
+
+        public string Name { get; set; }
+
+        public string Path
+        {
+            get
+            {
+                return ResourceManager.GetRealPath(path);
+            }
+            set { path = value; }
+        }
+
+        private string path;
+
+        public Texture2D Texture
+        {
+            get
+            {
+                if (!Loaded) { Loaded = true; }
+                return texture;
+            }
+            set
+            {
+                loaded = true;
+                texture = value;
+            }
+        }
+
+        public int Users { get; set; }
+
+        public override string ToString()
+        {
+            return Name;
         }
     }
 }

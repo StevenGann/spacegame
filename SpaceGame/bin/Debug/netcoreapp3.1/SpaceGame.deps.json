@@ -9,11 +9,10 @@
       "SpaceGame/1.0.0": {
         "dependencies": {
           "CS-Script.Core": "1.3.1",
-          "Microsoft.CodeAnalysis.FxCopAnalyzers": "3.0.0",
-          "RayLib.NET.x64": "1.0.0",
+          "Raylib-cs": "3.1.3",
           "SharpNoise": "0.12.1.1",
-          "SixLabors.ImageSharp": "1.0.0-rc0001",
-          "Terminal.Gui": "0.81.0"
+          "SharpZipLib": "1.2.0",
+          "SixLabors.ImageSharp": "1.0.0-rc0001"
         },
         "runtime": {
           "SpaceGame.dll": {}
@@ -199,14 +198,6 @@
           }
         }
       },
-      "Microsoft.CodeAnalysis.FxCopAnalyzers/3.0.0": {
-        "dependencies": {
-          "Microsoft.CodeAnalysis.VersionCheckAnalyzer": "3.0.0",
-          "Microsoft.CodeQuality.Analyzers": "3.0.0",
-          "Microsoft.NetCore.Analyzers": "3.0.0",
-          "Microsoft.NetFramework.Analyzers": "3.0.0"
-        }
-      },
       "Microsoft.CodeAnalysis.Scripting.Common/3.4.0": {
         "dependencies": {
           "Microsoft.CodeAnalysis.Common": "3.4.0"
@@ -259,8 +250,6 @@
           }
         }
       },
-      "Microsoft.CodeAnalysis.VersionCheckAnalyzer/3.0.0": {},
-      "Microsoft.CodeQuality.Analyzers/3.0.0": {},
       "Microsoft.CSharp/4.3.0": {
         "dependencies": {
           "System.Collections": "4.3.0",
@@ -292,31 +281,21 @@
           }
         }
       },
-      "Microsoft.NetCore.Analyzers/3.0.0": {},
       "Microsoft.NETCore.Platforms/2.1.2": {},
       "Microsoft.NETCore.Targets/1.1.0": {},
-      "Microsoft.NetFramework.Analyzers/3.0.0": {},
-      "NStack.Core/0.14.0": {
-        "runtime": {
-          "lib/netstandard2.0/NStack.dll": {
-            "assemblyVersion": "1.0.0.0",
-            "fileVersion": "1.0.0.0"
-          }
-        }
-      },
-      "RayLib.NET.x64/1.0.0": {
-        "runtime": {
-          "lib/RayLib.NET.dll": {
-            "assemblyVersion": "1.0.0.0",
-            "fileVersion": "1.0.0.0"
-          }
-        }
-      },
       "SharpNoise/0.12.1.1": {
         "runtime": {
           "lib/netstandard2.0/SharpNoise.dll": {
             "assemblyVersion": "0.12.1.1",
             "fileVersion": "0.12.1.1"
+          }
+        }
+      },
+      "SharpZipLib/1.2.0": {
+        "runtime": {
+          "lib/netstandard2.0/ICSharpCode.SharpZipLib.dll": {
+            "assemblyVersion": "1.2.0.246",
+            "fileVersion": "1.2.0.246"
           }
         }
       },
@@ -408,6 +387,7 @@
         }
       },
       "System.Memory/4.5.3": {},
+      "System.Numerics.Vectors/4.5.0": {},
       "System.ObjectModel/4.3.0": {
         "dependencies": {
           "System.Collections": "4.3.0",
@@ -554,15 +534,12 @@
         }
       },
       "System.Threading.Tasks.Extensions/4.5.3": {},
-      "Terminal.Gui/0.81.0": {
+      "Raylib-cs/3.1.3": {
         "dependencies": {
-          "NStack.Core": "0.14.0"
+          "System.Numerics.Vectors": "4.5.0"
         },
         "runtime": {
-          "lib/netstandard2.0/Terminal.Gui.dll": {
-            "assemblyVersion": "1.0.0.0",
-            "fileVersion": "1.0.0.0"
-          }
+          "Raylib-cs.dll": {}
         }
       }
     }
@@ -608,33 +585,12 @@
       "path": "microsoft.codeanalysis.csharp.scripting/3.4.0",
       "hashPath": "microsoft.codeanalysis.csharp.scripting.3.4.0.nupkg.sha512"
     },
-    "Microsoft.CodeAnalysis.FxCopAnalyzers/3.0.0": {
-      "type": "package",
-      "serviceable": true,
-      "sha512": "sha512-ea8bbNa4fzS/s55AUCAvYjb6Y3lFysFVfEwt9zIwR/NeFpOcUluIleOXSUPAyUtwBFugn01aWvNfMVmIwnvgqQ==",
-      "path": "microsoft.codeanalysis.fxcopanalyzers/3.0.0",
-      "hashPath": "microsoft.codeanalysis.fxcopanalyzers.3.0.0.nupkg.sha512"
-    },
     "Microsoft.CodeAnalysis.Scripting.Common/3.4.0": {
       "type": "package",
       "serviceable": true,
       "sha512": "sha512-+b6I3DZL2zvck+B/E/aiOveakj5U2G2BcYODQxcGh2IDbatNU3XXxGT1HumkWB5uIZI2Leu0opBgBpjScmjGMA==",
       "path": "microsoft.codeanalysis.scripting.common/3.4.0",
       "hashPath": "microsoft.codeanalysis.scripting.common.3.4.0.nupkg.sha512"
-    },
-    "Microsoft.CodeAnalysis.VersionCheckAnalyzer/3.0.0": {
-      "type": "package",
-      "serviceable": true,
-      "sha512": "sha512-RL9OdvWLhtQXcvxK2EPbXM9LandLcDG14Ndz5baVH2aiyvEB11VrHfrzLNoEE5B2/zhRGqN+BHsBg21f75wG9g==",
-      "path": "microsoft.codeanalysis.versioncheckanalyzer/3.0.0",
-      "hashPath": "microsoft.codeanalysis.versioncheckanalyzer.3.0.0.nupkg.sha512"
-    },
-    "Microsoft.CodeQuality.Analyzers/3.0.0": {
-      "type": "package",
-      "serviceable": true,
-      "sha512": "sha512-pOROTgdPa+15sYfEMvDlWlDEedCO1SuRLrRjX36Ltli3SmhZawC2Vgws4crz1XMs9WRzBo8WIJM5WRzGNsOSmQ==",
-      "path": "microsoft.codequality.analyzers/3.0.0",
-      "hashPath": "microsoft.codequality.analyzers.3.0.0.nupkg.sha512"
     },
     "Microsoft.CSharp/4.3.0": {
       "type": "package",
@@ -650,13 +606,6 @@
       "path": "microsoft.extensions.dependencymodel/3.1.2",
       "hashPath": "microsoft.extensions.dependencymodel.3.1.2.nupkg.sha512"
     },
-    "Microsoft.NetCore.Analyzers/3.0.0": {
-      "type": "package",
-      "serviceable": true,
-      "sha512": "sha512-JdjhkobYjmQAu4JpsEALDAr7xig2pzXMsXGilHJ2gvmUaUSBjYObw53CBaIkRXmPu0DaDPN8ze9LCtsRd1R8UA==",
-      "path": "microsoft.netcore.analyzers/3.0.0",
-      "hashPath": "microsoft.netcore.analyzers.3.0.0.nupkg.sha512"
-    },
     "Microsoft.NETCore.Platforms/2.1.2": {
       "type": "package",
       "serviceable": true,
@@ -671,33 +620,19 @@
       "path": "microsoft.netcore.targets/1.1.0",
       "hashPath": "microsoft.netcore.targets.1.1.0.nupkg.sha512"
     },
-    "Microsoft.NetFramework.Analyzers/3.0.0": {
-      "type": "package",
-      "serviceable": true,
-      "sha512": "sha512-Q0sB3JYld9JMa9/HKtioIxhqmOohEku1FkfSC/uf0usGcCIhm6GYWU565klP64jC2kzmjFIu/6fkHEIYRqZCQQ==",
-      "path": "microsoft.netframework.analyzers/3.0.0",
-      "hashPath": "microsoft.netframework.analyzers.3.0.0.nupkg.sha512"
-    },
-    "NStack.Core/0.14.0": {
-      "type": "package",
-      "serviceable": true,
-      "sha512": "sha512-zYNd8033b7BPIw7LSNMFu3H1WovQa2XQXd3cZ+Xs/0EPqy0ZhT6bKr4+8eqFpvpD0yx2QvwkvLL0bCqSnJxKNA==",
-      "path": "nstack.core/0.14.0",
-      "hashPath": "nstack.core.0.14.0.nupkg.sha512"
-    },
-    "RayLib.NET.x64/1.0.0": {
-      "type": "package",
-      "serviceable": true,
-      "sha512": "sha512-pzs6MSRqDLAJdoLhHi9hL3pQN5/3pVVoWoKZjJ0mmTGp3ipqJ4C/Llg6hlyyCqbSCqLCgNZGKN0WPwGT7p4Q7g==",
-      "path": "raylib.net.x64/1.0.0",
-      "hashPath": "raylib.net.x64.1.0.0.nupkg.sha512"
-    },
     "SharpNoise/0.12.1.1": {
       "type": "package",
       "serviceable": true,
       "sha512": "sha512-YU87vP4pCJpEtu+yigyZFEzZPy02rf49v3YfrTN/f9YTfk1SZFfOTUKYhPcP4r1+4MpNNOBbu7UNlTvcwpx5Ww==",
       "path": "sharpnoise/0.12.1.1",
       "hashPath": "sharpnoise.0.12.1.1.nupkg.sha512"
+    },
+    "SharpZipLib/1.2.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-zvWa/L02JHNatdtjya6Swpudb2YEHaOLHL1eRrqpjm71iGRNUNONO5adUF/9CHbSJbzhELW1UoH4NGy7n7+3bQ==",
+      "path": "sharpziplib/1.2.0",
+      "hashPath": "sharpziplib.1.2.0.nupkg.sha512"
     },
     "SixLabors.ImageSharp/1.0.0-rc0001": {
       "type": "package",
@@ -768,6 +703,13 @@
       "sha512": "sha512-3oDzvc/zzetpTKWMShs1AADwZjQ/36HnsufHRPcOjyRAAMLDlu2iD33MBI2opxnezcVUtXyqDXXjoFMOU9c7SA==",
       "path": "system.memory/4.5.3",
       "hashPath": "system.memory.4.5.3.nupkg.sha512"
+    },
+    "System.Numerics.Vectors/4.5.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-sUWPp86awz4vqhqP6ve/s/6MXu2CXt8w4kYBF6ofO+sNH0Rk7jzT/XyFEtIXBJajVrvqeXkc7GhNZtCegpvY1Q==",
+      "path": "system.numerics.vectors/4.5.0",
+      "hashPath": "system.numerics.vectors.4.5.0.nupkg.sha512"
     },
     "System.ObjectModel/4.3.0": {
       "type": "package",
@@ -923,12 +865,10 @@
       "path": "system.threading.tasks.extensions/4.5.3",
       "hashPath": "system.threading.tasks.extensions.4.5.3.nupkg.sha512"
     },
-    "Terminal.Gui/0.81.0": {
-      "type": "package",
-      "serviceable": true,
-      "sha512": "sha512-HSW9pvxXC+tzspTlUaqksNCoum5L7purbf/vXZgaMHHG5oye7DtxlOKjvSXMSKlxHN4JxZvfEGPUbjcA2B81sQ==",
-      "path": "terminal.gui/0.81.0",
-      "hashPath": "terminal.gui.0.81.0.nupkg.sha512"
+    "Raylib-cs/3.1.3": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
     }
   }
 }

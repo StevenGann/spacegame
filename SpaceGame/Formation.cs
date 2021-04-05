@@ -1,4 +1,6 @@
-﻿using Raylib;
+﻿using System.Numerics;
+using Raylib_cs;
+using static Raylib_cs.Raylib;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -39,7 +41,7 @@ namespace SpaceGame
 
             if (index < slots.Count)
             {
-                return unit.Units[0].Location + (slots[index].Rotate((float)unit.Units[0].Angle * Raylib.Raylib.DEG2RAD) * Scalar);
+                return unit.Units[0].Location + (slots[index].Rotate((float)unit.Units[0].Angle * DEG2RAD) * Scalar);
             }
 
             return Ship.Location;

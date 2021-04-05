@@ -1,18 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using Raylib;
-using static Raylib.Raylib;
+using System.Numerics;
+using Raylib_cs;
+using static Raylib_cs.Raylib;
 
 namespace SpaceGame
 {
-    internal class Program
+    public static class Program
     {
         private static string ResourcesPath = "";
 
-        private static void Main(string[] args)
+        public static void Main()
         {
-            ResourcesPath = System.IO.Directory.GetCurrentDirectory() + @"\..\..\resources\";
+            ResourcesPath = System.IO.Directory.GetCurrentDirectory() + @"\..\..\..\..\resources\";
 
             /*
             SetTargetFPS(120);
@@ -85,37 +86,37 @@ namespace SpaceGame
             }
             CloseWindow();
             */
-
+            ResourceManager.Register(typeof(XmlResource), new string[] { ".xml" });
+            ResourceManager.Register(typeof(ScriptResource), new string[] { ".cs" });
             ResourceManager.Load(ResourcesPath);
             GameManager.Instantiate();
 
             InitWindow((int)Math.Max(1024, Debug.GetFlag("ScreenWidth")), (int)Math.Max(768, Debug.GetFlag("ScreenHeight")), "SpaceGame");
             SetConfigFlags(ConfigFlag.FLAG_VSYNC_HINT | ConfigFlag.FLAG_MSAA_4X_HINT | ((Debug.GetFlag("Fullscreen") == 1) ? (ConfigFlag.FLAG_FULLSCREEN_MODE) : 0));
-            UiManager.Instantiate();
 
-            for (int j = 0; j < 8; j++)
+            for (int j = 0; j < 2; j++)
             {
-                SpaceShipUnit unitEnemy = SpaceShipUnit.FromXml(ResourceManager.GetXml(@"unit\base_fighter_squadron"), null);
+                SpaceShipUnit unitEnemy = SpaceShipUnit.FromXml(ResourceManager.Get<XmlResource>(@"xml\unit\base_fighter_squadron"), null);
                 unitEnemy.Location = new Vector2(900, 900 - (j * 60));
                 unitEnemy.Formation = new Formation();
                 GameManager.Add(unitEnemy);
             }
 
-            SpaceShip objPlayer = SpaceShip.FromXml(ResourceManager.GetXml(@"ship\base_cruiser"), null);
+            /*SpaceShip objPlayer = SpaceShip.FromXml(ResourceManager.Get<XmlResource>(@"xml\ship\base_cruiser"), null);
             objPlayer.Faction = 1;
             objPlayer.Location = new Vector2(1000, 300);
             objPlayer.Hitbox = Hitbox.Automatic(objPlayer.Texture, (int)Math.Floor(objPlayer.Texture.Texture.height / 32.0));
 
             SpaceShipUnit unitPlayer = new SpaceShipUnit(objPlayer);
-            unitPlayer.UiImage = ResourceManager.GetTexture(@"thumbnail\kar ik vot 349");
-            GameManager.Add(unitPlayer);
+            unitPlayer.UiImage = ResourceManager.Get<TextureResource>(@"images\thumbnail\kar ik vot 349");
+            GameManager.Add(unitPlayer);*/
 
             SpaceStructure station = new SpaceStructure()
             {
-                Texture = ResourceManager.GetTexture(@"planet\station2"),
+                Texture = ResourceManager.Get<TextureResource>(@"images\planet\station2"),
                 Location = new Vector2(1500, 500),
                 Scale = 2.0f,
-                Hitbox = Hitbox.Automatic(ResourceManager.GetTexture(@"planet\station2"), 6),
+                Hitbox = Hitbox.Automatic(ResourceManager.Get<TextureResource>(@"images\planet\station2"), 6),
                 Faction = 2,
                 MaxHull = 1000,
                 Hull = 1000,
@@ -124,11 +125,11 @@ namespace SpaceGame
             };
             GameManager.Add(station);
 
-            double TargetFps = 60;
+            const double TargetFps = 60;
             SetTargetFPS((int)TargetFps);
-            while (!Raylib.Raylib.WindowShouldClose())
+            while (!WindowShouldClose())
             {
-                double fps = Math.Clamp(Raylib.Raylib.GetFPS(), 25, 1000);
+                double fps = Math.Clamp(GetFPS(), 25, 1000);
                 double delta = TargetFps / fps;
 
                 GameManager.Tick(delta);
@@ -149,12 +150,6 @@ namespace SpaceGame
             }
 
             CloseWindow();
-        }
-
-        private static void LoadingWorker_DoWork(object sender, DoWorkEventArgs e)
-        {
-            ResourceManager.Load(ResourcesPath);
-            GameManager.Instantiate();
         }
     }
 }

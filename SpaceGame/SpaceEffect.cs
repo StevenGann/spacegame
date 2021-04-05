@@ -1,4 +1,6 @@
-﻿using Raylib;
+﻿using System.Numerics;
+using Raylib_cs;
+using static Raylib_cs.Raylib;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -6,7 +8,7 @@ using System.Xml;
 
 namespace SpaceGame
 {
-    internal class SpaceEffect : SpaceObject
+    public class SpaceEffect : SpaceObject
     {
         public double Lifespan { get; set; } = 100;
         public int MaxParticles { get; set; } = 10;
@@ -80,7 +82,7 @@ namespace SpaceGame
             {
                 foreach (SpaceEffect child in Children)
                 {
-                    if (child.Location.x == 0)
+                    if (child.Location.X == 0)
                     {
                         child.Location = Location;
                         child.Velocity = Velocity;
@@ -99,7 +101,7 @@ namespace SpaceGame
 
             if (!Initialized)
             {
-                if (Texture.Loaded == false)
+                if (!Texture.Loaded)
                 {
                     Debug.WriteLine("Loading " + Texture.Name);
                 }
@@ -107,7 +109,7 @@ namespace SpaceGame
                 Initialized = true;
             }
 
-            if (MinParticleAlpha < 1.0) { Raylib.Raylib.BeginBlendMode(BlendMode.BLEND_ADDITIVE); }
+            if (MinParticleAlpha < 1.0) { BeginBlendMode(BlendMode.BLEND_ADDITIVE); }
             while (Particles.Count > 0)
             {
                 Particle p = Particles.Dequeue();
@@ -115,7 +117,7 @@ namespace SpaceGame
                 buffer.Enqueue(p);
             }
 
-            if (MinParticleAlpha < 1.0) { Raylib.Raylib.EndBlendMode(); }
+            if (MinParticleAlpha < 1.0) { EndBlendMode(); }
 
             while (buffer.Count > 0)
             {
@@ -134,10 +136,10 @@ namespace SpaceGame
         private void DrawParticle(Particle p)
         {
             Vector2 loc = DrawLocation + p.Location;
-            Raylib.Raylib.DrawTexturePro(
+            DrawTexturePro(
                 Texture.Texture,
                 new Rectangle(0, 0, Texture.Texture.width, Texture.Texture.height),
-                new Rectangle(loc.x, loc.y, Texture.Texture.width * p.Scale * GameManager.ViewScale, Texture.Texture.height * p.Scale * GameManager.ViewScale),
+                new Rectangle(loc.X, loc.Y, Texture.Texture.width * p.Scale * GameManager.ViewScale, Texture.Texture.height * p.Scale * GameManager.ViewScale),
                 TextureOffset * p.Scale * GameManager.ViewScale,
                 p.Angle,
                 new Color((byte)0xFF, (byte)0xFF, (byte)0xFF, (byte)(255 * p.Alpha)));
@@ -161,7 +163,7 @@ namespace SpaceGame
 
         public static SpaceEffect FromXml(XmlResource Xml, SpaceEffect DstObject)
         {
-            if (Xml == null) { throw new ArgumentNullException("Xml"); }
+            if (Xml == null) { throw new ArgumentNullException(nameof(Xml)); }
             SpaceEffect Result = DstObject;
             if (DstObject == null)
             {
@@ -177,12 +179,12 @@ namespace SpaceGame
             {
                 try
                 {
-                    baseObject = SpaceEffect.FromXml(ResourceManager.GetXml(baseName), null);
+                    baseObject = SpaceEffect.FromXml(ResourceManager.Get<XmlResource>(baseName), null);
                 }
                 catch (KeyNotFoundException e)
                 {
                     baseObject = Result;
-                    Debug.WriteLine("XML Error: Failed to locate XML base " + baseName);
+                    Debug.WriteLine("XML Error: Failed to locate XML base " + baseName + ". " + e.Message);
                 }
             }
 
@@ -291,7 +293,7 @@ namespace SpaceGame
                 foreach (SpaceEffect effect in Default)
                 {
                     SpaceEffect newChild = new SpaceEffect();
-                    result.Add(FromXml(ResourceManager.GetXml(effect.XmlSource), newChild));
+                    result.Add(FromXml(ResourceManager.Get<XmlResource>(effect.XmlSource), newChild));
                 }
                 count = Default.Count;
             }
@@ -304,7 +306,7 @@ namespace SpaceGame
                     if (node.Name.ToUpperInvariant() == Name.ToUpperInvariant())
                     {
                         SpaceEffect newChild = new SpaceEffect();
-                        result.Add(FromXml(ResourceManager.GetXml(node.InnerText), newChild));
+                        result.Add(FromXml(ResourceManager.Get<XmlResource>(node.InnerText), newChild));
                         count++;
                     }
                 }

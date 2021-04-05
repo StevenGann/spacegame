@@ -1,18 +1,20 @@
-﻿using System;
+﻿using System.Numerics;
+using Raylib_cs;
+using static Raylib_cs.Raylib;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Linq;
-using Raylib;
 
 namespace SpaceGame
 {
-    internal class GameManager
+    public class GameManager
     {
         public static GameManager Instance { get; set; } = null;
         public List<SpaceObject> Objects { get; set; } = new List<SpaceObject>();
         public List<SpaceShipUnit> Units { get; set; } = new List<SpaceShipUnit>();
         public static int PruneLimit = 100;
-        public static TextureResource Background = ResourceManager.GetTexture(@"environment\space\stars_big");
+        public static TextureResource Background = ResourceManager.Get<TextureResource>(@"images\environment\space\stars_big");
         public static float ViewScale { get; set; } = 0.5f;
         public static Vector2 ViewOffset { get; set; } = new Vector2(0, 0);
         public static bool Paused { get; set; } = false;
@@ -74,13 +76,13 @@ namespace SpaceGame
             {
                 if (!Debug.ConsoleIsOpen)
                 {
-                    if (Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_SPACE)) { Paused = !Paused; }
+                    if (IsKeyPressed(KeyboardKey.KEY_SPACE)) { Paused = !Paused; }
                 }
             }
 
             // =============================Camera Controls========================================
 
-            float scrollAmount = Raylib.Raylib.GetMouseWheelMove();
+            float scrollAmount = GetMouseWheelMove();
             float a = (float)Math.Abs(scrollAmount) * ViewScale * 100.0f;
             a = 0;
             const float maxZoom = 4;
@@ -100,14 +102,14 @@ namespace SpaceGame
 
             if (!Debug.ConsoleIsOpen)
             {
-                if (Raylib.Raylib.IsKeyDown(KeyboardKey.KEY_W)) { ViewOffset += Vector2.UnitY * (5f + panBoost); }
-                if (Raylib.Raylib.IsKeyDown(KeyboardKey.KEY_S)) { ViewOffset += Vector2.UnitY * -(5f + panBoost); }
-                if (Raylib.Raylib.IsKeyDown(KeyboardKey.KEY_A)) { ViewOffset += Vector2.UnitX * (5f + panBoost); }
-                if (Raylib.Raylib.IsKeyDown(KeyboardKey.KEY_D)) { ViewOffset += Vector2.UnitX * -(5f + panBoost); }
-                if (!Raylib.Raylib.IsKeyDown(KeyboardKey.KEY_W) &&
-                   !Raylib.Raylib.IsKeyDown(KeyboardKey.KEY_S) &&
-                   !Raylib.Raylib.IsKeyDown(KeyboardKey.KEY_A) &&
-                   !Raylib.Raylib.IsKeyDown(KeyboardKey.KEY_D))
+                if (IsKeyDown(KeyboardKey.KEY_W)) { ViewOffset += Vector2.UnitY * (5f + panBoost); }
+                if (IsKeyDown(KeyboardKey.KEY_S)) { ViewOffset += Vector2.UnitY * -(5f + panBoost); }
+                if (IsKeyDown(KeyboardKey.KEY_A)) { ViewOffset += Vector2.UnitX * (5f + panBoost); }
+                if (IsKeyDown(KeyboardKey.KEY_D)) { ViewOffset += Vector2.UnitX * -(5f + panBoost); }
+                if (!IsKeyDown(KeyboardKey.KEY_W) &&
+                    !IsKeyDown(KeyboardKey.KEY_S) &&
+                    !IsKeyDown(KeyboardKey.KEY_A) &&
+                    !IsKeyDown(KeyboardKey.KEY_D))
                 {
                     panBoost *= 0.90f;
                 }
@@ -118,7 +120,7 @@ namespace SpaceGame
                 }
             }
 
-            if (!Paused || ((Raylib.Raylib.IsKeyDown(KeyboardKey.KEY_RIGHT) || Raylib.Raylib.IsKeyPressed(KeyboardKey.KEY_LEFT)) && !Debug.ConsoleIsOpen))
+            if (!Paused || ((IsKeyDown(KeyboardKey.KEY_RIGHT) || IsKeyPressed(KeyboardKey.KEY_LEFT)) && !Debug.ConsoleIsOpen))
             {
                 // ==================================Collisons=========================================
                 while (bufferObjects.Count > 0)
@@ -128,12 +130,12 @@ namespace SpaceGame
 
                 IEnumerable<SpaceObject> projectiles = Instance.Objects.Where(o =>
                     o is SpaceProjectile &&
-                    o.Active == true
+                    o.Active
                 );
 
                 IEnumerable<SpaceObject> ships = Instance.Objects.Where(o =>
                     o is SpaceShip &&
-                    o.Active == true
+                    o.Active
                 );
 
                 foreach (SpaceObject projectile in projectiles)
@@ -143,12 +145,12 @@ namespace SpaceGame
                         if (projectile.Faction != ship.Faction &&
                             //Raylib.Raylib.Vector2Distance(projectile.Location, ship.Location) < ship.Texture.Texture.width / 2 &&
                             ship.CheckCollision(projectile.Hitbox, projectile.Location, projectile.Scale, (float)projectile.Angle) &&
-                            (projectile as SpaceProjectile).Sender != ship
+                            (projectile as SpaceProjectile)?.Sender != ship
                             )
                         {
-                            (ship as SpaceShip).Damage((projectile as SpaceProjectile).Damage);
+                            (ship as SpaceShip)?.Damage((double)(projectile as SpaceProjectile)?.Damage);
 
-                            var o = SpaceEffect.FromXml(ResourceManager.GetXml(@"effect\base_impact"), null);
+                            var o = SpaceEffect.FromXml(ResourceManager.Get<XmlResource>(@"xml\effect\base_impact"), null);
                             o.Location = projectile.Location;
                             o.Velocity = ship.Velocity;
                             GameManager.Add(o);
@@ -201,7 +203,7 @@ namespace SpaceGame
         private static void DrawBackground()
         {
             //Raylib.Raylib.DrawTexture(Background.Texture, (int)ViewOffset.x, (int)ViewOffset.y, Raylib.Color.WHITE);
-            Raylib.Raylib.DrawTextureEx(Background.Texture, (ViewOffset / 50f) + bgOffset, 0, 0.75f, Color.WHITE);
+            DrawTextureEx(Background.Texture, (ViewOffset / 50f) + bgOffset, 0, 0.75f, Color.WHITE);
         }
 
         public static void Instantiate()
@@ -257,7 +259,7 @@ namespace SpaceGame
                 {
                     if ((i + j) < GameManager.Instance.Objects.Count)
                     {
-                        line += (i + j).ToString() + ":[" + "]\t";
+                        line += (i + j).ToString() + ":[" + GameManager.Instance.Objects[i + j].ToString() + "]\t";
                     }
                 }
 
@@ -279,13 +281,13 @@ namespace SpaceGame
             SpaceShipUnit newUnit = new SpaceShipUnit();
             for (int i = 0; i < 7; i++)
             {
-                SpaceShip newShip = SpaceShip.FromXml(ResourceManager.GetXml(arg[0]), null);
+                SpaceShip newShip = SpaceShip.FromXml(ResourceManager.Get<XmlResource>(arg[0]), null);
                 newShip.Location = new Vector2(0, 0);
                 newShip.Faction = 2;
                 newShip.Hitbox = new Hitbox(newShip.Texture.Texture.width);
                 newUnit.Add(newShip);
             }
-            newUnit.UiImage = ResourceManager.GetTexture(@"thumbnail\barb");
+            newUnit.UiImage = ResourceManager.Get<TextureResource>(@"thumbnail\barb");
             GameManager.Add(newUnit);
 
             return 0;

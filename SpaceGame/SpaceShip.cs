@@ -1,5 +1,7 @@
 ﻿using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Raylib;
+using System.Numerics;
+using Raylib_cs;
+using static Raylib_cs.Raylib;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
@@ -47,6 +49,7 @@ namespace SpaceGame
                 leader = Unit.Leader;
                 Stance = leader.Stance;
                 Objective = leader.Objective;
+                Goal = leader.Goal;
                 Behavior = leader.Behavior;
             }
 
@@ -82,7 +85,7 @@ namespace SpaceGame
 
                                 Objective = nearTargets[RandomOffset];
 
-                                float distance = Raylib.Raylib.Vector2Distance(Objective.Location, Location);
+                                float distance = Vector2.Distance(Objective.Location, Location);
                                 if (RNG.Next(100) <= 200 / distance) { attackOffset = new Vector2(RNG.Next((int)(distance / 50)) - RNG.Next((int)(distance / 50)), RNG.Next((int)(distance / 50)) - RNG.Next((int)(distance / 50))); }
                                 Goal = (Objective as SpaceShip).GetLead(1 + distance / 50) + attackOffset;
 
@@ -105,7 +108,7 @@ namespace SpaceGame
                 {
                     if (Objective == this || Objective.Active == false) { Behavior = Behaviors.Idle; }
 
-                    float distance = Raylib.Raylib.Vector2Distance(Objective.Location, Location);
+                    float distance = Vector2.Distance(Objective.Location, Location);
                     if (RNG.Next(100) <= 200 / distance) { attackOffset = new Vector2(RNG.Next((int)(distance / 50)) - RNG.Next((int)(distance / 50)), RNG.Next((int)(distance / 50)) - RNG.Next((int)(distance / 50))); }
 
                     if (Objective is SpaceShip)
@@ -152,15 +155,15 @@ namespace SpaceGame
 
                     Throttle = Math.Pow(Math.Clamp((180 - angleOffset) / 180, 0.0, 1.0), 2);
 
-                    if (Raylib.Raylib.Vector2Distance(Location, goal) < Velocity.Length() * 60 * 10)
+                    if (Vector2.Distance(Location, goal) < Velocity.Length() * 60 * 10)
                     {
-                        if (Raylib.Raylib.Vector2Distance(Location, goal) < Texture.Texture.height)
+                        if (Vector2.Distance(Location, goal) < Texture.Texture.height)
                         {
                             Behavior = Behaviors.Idle;
                         }
                         else
                         {
-                            Throttle *= (Raylib.Raylib.Vector2Distance(Location, goal) / ((Velocity.Length() * 120) + 1)) * 0.75;
+                            Throttle *= (Vector2.Distance(Location, goal) / ((Velocity.Length() * 120) + 1)) * 0.75;
                         }
                     }
 
@@ -178,7 +181,7 @@ namespace SpaceGame
                                     RandomOffset = RandomOffset = (int)Math.Floor(RNG.NextDouble() * nearTargets.Length);
                                 }
 
-                                float distance = Raylib.Raylib.Vector2Distance(nearTargets[RandomOffset].Location, Location);
+                                float distance = Vector2.Distance(nearTargets[RandomOffset].Location, Location);
                                 if (RNG.Next(100) <= 200 / distance) { attackOffset = new Vector2(RNG.Next((int)(distance / 50)) - RNG.Next((int)(distance / 50)), RNG.Next((int)(distance / 50)) - RNG.Next((int)(distance / 50))); }
                                 Vector2 incidentalGoal = (nearTargets[RandomOffset] as SpaceShip).GetLead(1 + distance / 50) + attackOffset;
 
@@ -201,7 +204,7 @@ namespace SpaceGame
                 Vector2 goal = Unit.Formation.GetLocation(this, Texture.Texture.width * 0.5f);
                 Vector2 screenGoal = UiManager.WorldToScreen(goal);
                 Vector2 screenLocation = UiManager.WorldToScreen(Location);
-                Debug.DrawLine((int)screenGoal.x, (int)screenGoal.y, (int)screenLocation.x, (int)screenLocation.y, new Color(255, 255, 255, 64));
+                Debug.DrawLine((int)screenGoal.X, (int)screenGoal.Y, (int)screenLocation.X, (int)screenLocation.Y, new Color(255, 255, 255, 64));
 
                 if (Vector2.Distance(Location, goal) > Texture.Texture.width)
                 {
@@ -218,13 +221,13 @@ namespace SpaceGame
 
                     Throttle = Math.Pow(Math.Clamp((180 - angleOffset) / 180, 0.0, 1.0), 2);
 
-                    if (Raylib.Raylib.Vector2Distance(Location, goal) < Velocity.Length() * 60 * 10)
+                    if (Vector2.Distance(Location, goal) < Velocity.Length() * 60 * 10)
                     {
-                        Throttle *= (Raylib.Raylib.Vector2Distance(Location, goal) / ((Velocity.Length() * 120) + 1)) * 0.75;
+                        Throttle *= (Vector2.Distance(Location, goal) / ((Velocity.Length() * 120) + 1)) * 0.75;
                     }
 
-                    if (Behavior == Behaviors.Idle)
-                    { Throttle = Throttle * 0.1; }
+                    //if (Behavior == Behaviors.Idle)
+                    //{ Throttle = Throttle * 0.1; }
                 }
                 else
                 {
@@ -238,7 +241,7 @@ namespace SpaceGame
             Acceleration = thrust * (float)Delta / (float)Mass;
 
             // Nudge away from other ships
-            /*SpaceObject[] neighbors = GetNeighbors(Location, Texture.Texture.width);
+            SpaceObject[] neighbors = GetNeighbors(Location, Texture.Texture.width);
             if (neighbors.Length > 0)
             {
                 for (int i = 0; i < neighbors.Length; i++)
@@ -248,13 +251,13 @@ namespace SpaceGame
                     //nudge += new Vector2((float)RNG.NextDouble(), (float)RNG.NextDouble()) / (Vector2.Distance(neighbors[i].Location, Location) + 0.1f) ;
                     Acceleration += nudge / (float)Mass;
                 }
-            }*/
-
+            }
+            /*
             if (!isLeader)
             {
                 Vector2 nudge = Unit.Formation.GetLocation(this, Texture.Texture.width * 0.5f);
                 nudge = nudge - Location;
-                if (nudge.x != 0 || nudge.y != 0)
+                if (nudge.X != 0 || nudge.Y != 0)
                 {
                     if (nudge.Length() < Texture.Texture.width)
                     {
@@ -269,21 +272,18 @@ namespace SpaceGame
                             AngularAcceleration += TurnSpeed * Math.Pow(angleOffset, 5) * 0.1f;
                         }
                     }
-                    if (Behavior == Behaviors.Idle)
+                    if (false)//Behavior == Behaviors.Idle)
                     {
                         nudge = Vector2.Normalize(nudge) * 0.01f;
                     }
-                    else if (Behavior == Behaviors.Going)
+                    else
                     {
-                        nudge = Vector2.Normalize(nudge) * MathF.Pow(nudge.Length(), 2) * 0.001f;
+                        nudge = Vector2.Normalize(nudge) * (Velocity.Length() * 0.1f + 1f) * 0.1f;
                     }
-                    else if (Behavior == Behaviors.Attacking)
-                    {
-                        nudge = Vector2.Normalize(nudge) * MathF.Pow(nudge.Length(), 2) * 0.00001f;
-                    }
+
                     Velocity += (nudge * 1f) / (float)Mass;
                 }
-            }
+            }*/
 
             if (shotCooldown > 0) { shotCooldown -= 1 * Delta * (RNG.NextDouble() + RNG.NextDouble() + RNG.NextDouble()); }
             if (shotHeat > 0) { shotHeat -= 0.1 * Delta; }
@@ -302,14 +302,14 @@ namespace SpaceGame
                 if (Behavior == Behaviors.Going && !(this is SpaceShipHardpoint))
                 {
                     Color col = new Color(128, 128, 128, 16);
-                    Raylib.Raylib.DrawLineEx(Location * GameManager.ViewScale + GameManager.ViewOffset,
+                    DrawLineEx(Location * GameManager.ViewScale + GameManager.ViewOffset,
                         Goal * GameManager.ViewScale + GameManager.ViewOffset,
                         2f, col);
                 }
                 else if (Behavior == Behaviors.Attacking)
                 {
                     Color col = new Color(255, 0, 0, 16);
-                    Raylib.Raylib.DrawLineEx(Location * GameManager.ViewScale + GameManager.ViewOffset,
+                    DrawLineEx(Location * GameManager.ViewScale + GameManager.ViewOffset,
                         Goal * GameManager.ViewScale + GameManager.ViewOffset
                         , 2f, col);
                 }
@@ -319,7 +319,7 @@ namespace SpaceGame
 
             if (Unit != null && this == Unit.Leader)
             {
-                Raylib.Raylib.DrawCircle((int)loc.x, (int)loc.y, Texture.Texture.width * Scale * 0.25f, new Color(255, 0, 0, 128));
+                DrawCircle((int)loc.X, (int)loc.Y, Texture.Texture.width * Scale * 0.25f, new Color(255, 0, 0, 128));
             }
 
             base.Draw();
@@ -333,30 +333,30 @@ namespace SpaceGame
 
                 if (Shield < MaxShield && Shield > 0)
                 {
-                    Raylib.Raylib.DrawRectangle((int)(loc.x - barHalf), (int)(loc.y + barOffset), (int)Math.Round(barWidth * (Shield / MaxShield)), barHeight, Color.GREEN);
-                    Raylib.Raylib.DrawRectangleLines((int)(loc.x - barHalf), (int)(loc.y + barOffset), barWidth, barHeight, Color.DARKGREEN);
+                    DrawRectangle((int)(loc.X - barHalf), (int)(loc.Y + barOffset), (int)Math.Round(barWidth * (Shield / MaxShield)), barHeight, Color.GREEN);
+                    DrawRectangleLines((int)(loc.X - barHalf), (int)(loc.Y + barOffset), barWidth, barHeight, Color.DARKGREEN);
                 }
                 if (Hull < MaxHull && Hull > 0)
                 {
-                    Raylib.Raylib.DrawRectangle((int)(loc.x - barHalf), (int)(loc.y + barOffset) + barHeight + 1, (int)Math.Round(barWidth * (Hull / MaxHull)), barHeight, Color.RED);
-                    Raylib.Raylib.DrawRectangleLines((int)(loc.x - barHalf), (int)(loc.y + barOffset) + barHeight + 1, barWidth, barHeight, Color.DARKPURPLE);
+                    DrawRectangle((int)(loc.X - barHalf), (int)(loc.Y + barOffset) + barHeight + 1, (int)Math.Round(barWidth * (Hull / MaxHull)), barHeight, Color.RED);
+                    DrawRectangleLines((int)(loc.X - barHalf), (int)(loc.Y + barOffset) + barHeight + 1, barWidth, barHeight, Color.DARKPURPLE);
                 }
 
-                if (Debug.Enabled && !Debug.ConsoleIsOpen && Raylib.Raylib.IsKeyDown(KeyboardKey.KEY_F2))
+                if (Debug.Enabled && !Debug.ConsoleIsOpen && IsKeyDown(KeyboardKey.KEY_F2))
                 {
                     if (Stance == Stances.Defend)
                     {
                         if (Behavior == Behaviors.Idle)
                         {
-                            Raylib.Raylib.DrawCircleLines((int)loc.x, (int)loc.y, CombatRange * GameManager.ViewScale, new Color(255, 0, 0, 32));
+                            DrawCircleLines((int)loc.X, (int)loc.Y, CombatRange * GameManager.ViewScale, new Color(255, 0, 0, 32));
                         }
                         else if (Behavior == Behaviors.Going)
                         {
-                            Raylib.Raylib.DrawCircleLines((int)loc.x, (int)loc.y, MathF.Sqrt(Velocity.Length()) * 0.75f * CombatRange * GameManager.ViewScale, new Color(255, 0, 0, 32));
+                            DrawCircleLines((int)loc.X, (int)loc.Y, MathF.Sqrt(Velocity.Length()) * 0.75f * CombatRange * GameManager.ViewScale, new Color(255, 0, 0, 32));
                         }
                         else if (Behavior == Behaviors.Attacking)
                         {
-                            Raylib.Raylib.DrawCircleLines((int)loc.x, (int)loc.y, CombatRange * GameManager.ViewScale, new Color(255, 0, 0, 32));
+                            DrawCircleLines((int)loc.X, (int)loc.Y, CombatRange * GameManager.ViewScale, new Color(255, 0, 0, 32));
                         }
                     }
                 }
@@ -396,7 +396,7 @@ namespace SpaceGame
                 }
             }
 
-            var o = SpaceEffect.FromXml(ResourceManager.GetXml(@"effect\base_explosion"), null);
+            var o = SpaceEffect.FromXml(ResourceManager.Get<XmlResource>(@"xml\effect\base_explosion"), null);
             o.Location = Location;
             o.Velocity = Velocity;
             GameManager.Add(o);
@@ -412,7 +412,7 @@ namespace SpaceGame
 
             SpaceProjectile obj = new SpaceProjectile()
             {
-                Texture = ResourceManager.GetTexture(@"projectile\proton+"),
+                Texture = ResourceManager.Get<TextureResource>(@"images\projectile\proton+"),
                 Angle = this.Angle,
                 Velocity = heading * 50.0f,
                 Location = this.Location + heading * 100.0f,//Location = RotateAroundPoint(this.Location - (this.TextureOffset), this.Location, this.Angle),
@@ -437,8 +437,8 @@ namespace SpaceGame
 
         private static double AngleToPoint(Vector2 A, Vector2 B)
         {
-            float xDiff = B.x - A.x;
-            float yDiff = B.y - A.y;
+            float xDiff = B.X - A.X;
+            float yDiff = B.Y - A.Y;
             return Math.Atan2(yDiff, xDiff) * 180.0 / Math.PI;
         }
 
@@ -446,8 +446,8 @@ namespace SpaceGame
         {
             //Note to self: System.Math operates in Radians
             double angle = (Angle) * (Math.PI / 180); // Convert to radians
-            double rotatedX = Math.Cos(angle) * (Position.x - Center.x) - Math.Sin(angle) * (Position.y - Center.y) + Center.x;
-            double rotatedY = Math.Sin(angle) * (Position.x - Center.x) + Math.Cos(angle) * (Position.y - Center.y) + Center.y;
+            double rotatedX = Math.Cos(angle) * (Position.X - Center.X) - Math.Sin(angle) * (Position.Y - Center.Y) + Center.X;
+            double rotatedY = Math.Sin(angle) * (Position.X - Center.X) + Math.Cos(angle) * (Position.Y - Center.Y) + Center.Y;
             return new Vector2((float)rotatedX, (float)rotatedY);
         }
 
@@ -459,7 +459,7 @@ namespace SpaceGame
                        o.Faction == this.Faction &&
                        o.Active == true &&
                        o.Location != Position &&
-                       Raylib.Raylib.Vector2Distance(o.Location, Position) < Radius
+                       Vector2.Distance(o.Location, Position) < Radius
                     );
 
             return inSelection.ToArray();
@@ -471,7 +471,7 @@ namespace SpaceGame
                        o is SpaceShip &&
                        o.Faction != this.Faction &&
                        o.Active == true &&
-                       Raylib.Raylib.Vector2Distance(o.Location, Position) < Radius
+                       Vector2.Distance(o.Location, Position) < Radius
                     );
 
             return inSelection.ToArray();
@@ -512,7 +512,7 @@ namespace SpaceGame
             {
                 try
                 {
-                    baseObject = SpaceShip.FromXml(ResourceManager.GetXml(baseName), null);
+                    baseObject = SpaceShip.FromXml(ResourceManager.Get<XmlResource>(baseName), null);
                 }
                 catch (KeyNotFoundException e)
                 {
@@ -530,7 +530,7 @@ namespace SpaceGame
             Result.TurnSpeed = GetXmlValue(obj, "TurnSpeed", baseObject.TurnSpeed);
             Result.RateOfFire = GetXmlValue(obj, "RateOfFire", baseObject.RateOfFire);
             Result.ShieldRebootProbability = (int)GetXmlValue(obj, "ShieldRebootProbability", baseObject.ShieldRebootProbability);
-            Result.Texture = ResourceManager.GetTexture(GetXmlText(obj, "Texture", baseObject.Texture.Name));
+            Result.Texture = ResourceManager.Get<TextureResource>(GetXmlText(obj, "Texture", baseObject.Texture.Name));
             //Result.Hitbox = Hitbox.Automatic(Result.Texture, (int)Math.Max(2, Result.Scale * Result.Texture.Texture.height / 8));
 
             List<SpaceObject> hardpoints = GetXmlNested(obj, "Hardpoints", null);

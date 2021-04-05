@@ -4,7 +4,7 @@ using System.Text;
 
 namespace SpaceGame
 {
-    internal class SpaceStructure : SpaceShip
+    public class SpaceStructure : SpaceShip
     {
         public override void Tick(double Delta)
         {

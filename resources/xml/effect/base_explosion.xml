@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<spaceship>
+  <texture>images\effect\particle impact+3</texture>
+  <lifespan>80</lifespan>
+  <maxparticles>20</maxparticles>
+  <minparticles>5</minparticles>
+  <ParticleSpawnRadius>5</ParticleSpawnRadius>
+  <maxparticlespeed>0.5</maxparticlespeed>
+  <minparticlespeed>0.1</minparticlespeed>
+  <MinParticleLife>40</MinParticleLife>
+  <MaxParticleLife>80</MaxParticleLife>
+  <ChildEffect>xml\effect\base_smoke</ChildEffect>
+</spaceship>

@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<hardpoint>
-  <texture>hardpoint\blaster turret</texture>
-  <scale>1.0</scale>
-  <depth>1</depth>
-  <angulardrag>1</angulardrag>
-  <turnspeed>1</turnspeed>
-  <rateoffire>2</rateoffire>
-</hardpoint>
